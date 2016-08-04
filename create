@@ -1,0 +1,98 @@
+#!/bin/bash
+
+if [ -z "$RESOURCE_GROUP" ]; then
+    RESOURCE_GROUP=Neo4j
+fi
+if [ -z "$DEPLOYMENT" ]; then
+    DEPLOYMENT=HA
+fi
+if [ -z "$LOCATION" ]; then
+    LOCATION="East US"
+fi
+if [ -z "$CLUSTERNAME_PREFIX" ]; then
+    CLUSTERNAME_PREFIX="neoTestAA"
+fi
+if [ -z "$INSTANCES" ]; then
+    INSTANCES=1
+fi
+
+if [ -z "$PUBKEY" ]; then
+    PUBKEY=$(cat ~/.ssh/id_rsa.pub)
+fi
+if [ -z "$USERNAME" ]; then
+    USERNAME=$(whoami)
+fi
+
+PARAMETERS=$(cat<<JSON
+{
+    "AdminUserName": {
+        "value": "$USERNAME"
+    },
+    "ClusterNamePrefix": {
+        "value": "$CLUSTERNAME_PREFIX"
+    },
+    "AuthBySSH": {
+        "value": true
+    },
+    "AuthCredential": {
+        "value": "$PUBKEY"
+    },
+    "VmCount": {
+        "value": $INSTANCES
+    },
+    "VmSize": {
+        "value": "Standard_A1"
+    },
+    "VnetNewOrExisting": {
+        "value": "new"
+    },
+    "NetworkName": {
+        "value": "neoVnet"
+    },
+    "NetworkAddressPrefix": {
+        "value": "10.0.0.0/16"
+    },
+    "SubnetName": {
+        "value": "NeoVnetSubnet1"
+    },
+    "SubnetAddressPrefix": {
+        "value": "10.0.1.0/24"
+    },
+    "SubnetStartAddress": {
+        "value": "10.0.1.0"
+    },
+    "publicIPAddressName": {
+        "value": "NeoA001"
+    },
+    "publicIPAddressExists": {
+        "value": "new"
+    },
+    "publicIPAllocationMethod": {
+        "value": "Dynamic"
+    },
+    "publicIPIdleTimeoutInMinutes": {
+        "value": 10
+    },
+    "cacheMemoryPercentage": {
+        "value": 42
+    },
+    "ArtifactsBase": {
+        "value": "https://raw.githubusercontent.com/thobe/carcassour/master"
+    }
+}
+JSON
+)
+
+if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
+    if ! azure group create -n "$RESOURCE_GROUP" -l "$LOCATION"; then
+        exit $?
+    fi
+fi
+
+azure group deployment create\
+    --template-uri https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json \
+    -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
+
+#azure group deployment create -f mainTemplate.json -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
+
+exit $?
