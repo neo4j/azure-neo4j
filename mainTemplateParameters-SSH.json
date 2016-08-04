@@ -1,0 +1,60 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "AdminUserName": {
+            "value": "cuser"
+        },
+        "ClusterNamePrefix": {
+            "value": "neoTestAA"
+        },
+        "AuthBySSH": {
+            "value": true
+        },
+        "AuthCredential": {
+            "value": "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEA2VN9Gsxn7cWTVM2Dh2INa4mWK+It3u5glyAHu96Yv/crnWKBDd5yAswv1k0GZFXreWNtAyJ6BkTujgw4zXFMygTsjv2pQ2vKBeUnSoF9Bxfz6gkCy2A4oQpmbuQapQNoe3ShsYJYa7E9prHeMBopWfdb9ON1VfvPjUSu3hW6yxRyHz3ZJRr+wSIv50rLGTUfEo8BMX0CCmmScqSgyasoKZdKLyleLkuI150iDmvbqFq3HOmTcGIVla+hqaBBM9o4XiTl3X7XxpHQ89dcWJWv7hn6odx0uCsb3klLk+G+E7RV6dM07sR/u8eOGQp3cN2hq0QgKy10d9xvSfaSnq09+w== rsa-key-20160722"
+        },
+        "VmCount": {
+            "value": 2
+        },
+        "VmSize": {
+            "value": "Standard_A1"
+        },
+        "VnetNewOrExisting": {
+            "value": "new"
+        },
+        "NetworkName": {
+            "value": "neoVnet"
+        },
+        "NetworkAddressPrefix": {
+            "value": "10.0.0.0/16"
+        },
+        "SubnetName": {
+            "value": "NeoVnetSubnet1"
+        },
+        "SubnetAddressPrefix": {
+            "value": "10.0.1.0/24"
+        },
+        "SubnetStartAddress": {
+            "value": "10.0.1.0"
+        },
+        "publicIPAddressName": {
+            "value": "NeoA001"
+        },
+        "publicIPAddressExists": {
+            "value": "new"
+        },
+        "publicIPAllocationMethod": {
+            "value": "Dynamic"
+        },
+        "publicIPIdleTimeoutInMinutes": {
+            "value": 10
+        },
+        "cacheMemoryPercentage": {
+            "value": 42
+        },
+        "ArtifactsBase": {
+            "value": "https://atest221sc.blob.core.windows.net/arm"
+        }
+    }
+}

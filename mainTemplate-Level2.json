@@ -1,0 +1,599 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "AdminUserName": {
+            "type": "securestring"
+        },
+        "ClusterNamePrefix": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 11 /* Storage Account is most restrictive at 24 char name cap, UniqueID is 13, so 24-13=11. */
+        },
+        "AuthBySSH": {
+            "type": "bool"
+        },
+        "AuthCredential": { /* Either the admin password or SSH key, dictated by AuthBySSH */
+            "defaultValue": null,
+            "type": "securestring"
+        },
+        "VmCount": {
+            "type": "int",
+            "minValue": 1,
+            "defaultValue": 1
+        },
+        "VmSize": {
+            "type": "string"
+        },
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "VnetNewOrExisting": {
+            "type": "string",
+            "allowedValues": [
+                "new",
+                "existing"
+            ]
+        },
+        "NetworkName": {
+            "type": "string"
+        },
+        "NetworkAddressPrefix": { /* e.g., 1.2.3.4/16 */
+            "type": "string"
+        },
+        "SubnetName": {
+            "type": "string"
+        },
+        "SubnetAddressPrefix": { /* e.g. 1.2.3.0/24 */
+            "type": "string"
+        },
+        "SubnetStartAddress": {
+            "type": "string"
+        },
+        "ResourceGroupName": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]"
+        },
+        "publicIPAddressName": { /* Only needed for existing PublicIP */
+            "defaultValue": "NeoA001",
+            "type": "string"
+        },
+        "publicIPAddressExists": {
+            "type": "string",
+            "allowedValues": [
+                "new",
+                "existing"
+            ]
+        },
+        "publicIPAllocationMethod": {
+            "type": "string",
+            "allowedValues": [
+                "Static",
+                "Dynamic"
+            ],
+            "defaultValue": "Dynamic"
+        },
+        "publicIPIdleTimeoutInMinutes": {
+            "type": "int",
+            "defaultValue": 10,
+            "minValue": 4,
+            "maxValue": 30,
+            "metadata": {
+                "description": "Time to wait before reclaiming a 'no-traffic' connection as idle"
+            }
+        },
+        "cacheMemoryPercentage": {
+            "type": "int",
+            "defaultValue": -1,
+            "maxValue": 100,
+            "metadata": {
+                "description": "0..100% portion of Neo4J memory to dedicate to cache.  Negative values mean use current configuration file value."
+            }
+        },
+        "saList": { /* List of storage accounts to provision */
+            "type": "array"
+        },
+        "saListByVM": { /* List of storage account to use, indexed by ordinal VM number */
+            "type": "array"
+        },
+        "ArtifactsBase": {
+            "type": "string",
+            "metadata": {
+                "artifactsBaseUrl": "", /* do not remove or change this property */
+                "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
+            },
+            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+        }
+    },
+    "variables": {
+        "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
+        "namePrefixes": { /* used to create names for the different resource types */
+            "nic": "[concat(parameters('ClusterNamePrefix'),'-nic-')]",
+            "nsg": "[concat(parameters('ClusterNamePrefix'),'-sg')]",
+            "storage": "[concat(toLower(trim(parameters('ClusterNamePrefix'))), uniqueString(resourceGroup().id))]", /*unique storage account name based on RG ID */
+            "vm": "[concat(parameters('ClusterNamePrefix'),'-vm-')]",
+            "publicip": "[concat(parameters('ClusterNamePrefix'),'-pip')]",
+            "loadBalancer": "[concat(parameters('ClusterNamePrefix'),'-lb')]",
+            "availabilitySet": "[concat(parameters('ClusterNamePrefix'), '-as')]"
+        },
+        "apiVersions": { /* Centralize resource API versions */
+            "storage": "2016-01-01",
+            "compute": "2015-06-15",
+            "network": "2016-07-01"
+        },
+        "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
+        "resourceIDs": {
+            "loadbalancer": "[variables('LbResourceID')]",
+            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/BackendPool1')]",
+            "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
+            "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
+            "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
+            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('NetworkName'))]"
+        },
+        "natRulePrefix": "SSH-",
+        "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VnetNewOrExisting'), '.json')]",
+        "imageReferenceTest": { /* TODO: update this when image is published */
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "16.04.0-LTS",
+            "version": "latest"
+        },
+        "imageReferenceMarketPlace": {
+            "publisher": "MicrosoftWindowsServerEssentials",
+            "offer": "WindowsServerEssentials",
+            "sku": "WindowsServerEssentials",
+            "version": "latest"
+        },
+        "imageReference": "[variables('imageReferenceTest')]", /* TODO: update this when image is published - may need Plan vs. publisher block? */
+        "linuxConfigurationSSH-true": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[concat('/home/', parameters('AdminUserName'),'/.ssh/authorized_keys')]",
+                        "keyData": "[parameters('AuthCredential')]"
+                    }
+                ]
+            }
+        },
+        "linuxConfigurationSSH-false": { /* password authentication */
+            "disablePasswordAuthentication": false
+        },
+        "linuxConfiguration": "[variables(concat('linuxConfigurationSSH-',parameters('AuthBySSH')))]",
+        /* Configuration scripts */
+        "extensionSourceConfig": "neo4j.before.conf.txt", /* input to modify */
+        "extensionTargetConfig": "/etc/neo4j/neo4j.conf", /* config output path on VM */
+        "extensionScript": "fixNeoConfig.pl", /* script to customize config */
+        /* files we need copied to the VM */
+        "extensionScripts": [
+            "[concat(variables('artifactsBase'), variables('extensionSourceConfig'))]",
+            "[concat(variables('artifactsBase'), variables('extensionScript'))]"
+        ],
+        "neoClusterPort": "5300", /* Neo Communication port used all nodes */
+        "sq": "'" /* work around escaping of single quotes within an expression string */
+    },
+    "resources": [
+        /*********************************************************************
+        *** Provision the needed Storage Accounts
+	    ***
+	    *** https://msdn.microsoft.com/en-us/library/azure/mt163564.aspx
+        *********************************************************************/
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('saList')[copyIndex()]]",
+            "apiVersion": "[variables('apiVersions').storage]",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {},
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "Storage",
+            "dependsOn": [],
+            "copy": {
+                "name": "storageAccountProvisioningCI",
+                "count": "[length(parameters('saList'))]"
+            }
+        },
+        /*********************************************************************
+        *** One availability set to include all VMs.
+        *********************************************************************/
+        {
+            "comments": "Availailability set for all VMs",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('namePrefixes').availabilitySet]",
+            "apiVersion": "[variables('apiVersions').compute]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "platformUpdateDomainCount": 20,
+                "platformFaultDomainCount": 3
+            },
+            "dependsOn": []
+        },
+        /*********************************************************************
+        *** Build list of Server IPs
+        *********************************************************************/
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "IPListConstructor",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'generateIPList.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "subnetCIDR": {
+                        "value": "[parameters('SubnetAddressPrefix')]"
+                    },
+                    "addressCount": {
+                        "value": "[parameters('VmCount')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** NICs, one per VM.  Connected to the Load Balancer
+        *********************************************************************/
+        {
+            "comments": "NICs",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('namePrefixes').nic, padLeft(copyIndex(),3,'0'))]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[parameters('Location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]",
+                            /* "publicIPAddress": { "id": "[variables('resourceIDs').publicIP]"  }, */
+                            "subnet": {
+                                "id": "[concat(variables('resourceIDs').virtualNetwork, '/subnets/', parameters('SubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[variables('resourceIDs').loadbalancerBEP]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[concat(variables('resourceIDs').loadbalancer,'/inboundNatRules/', variables('natRulePrefix'), copyindex())]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('namePrefixes').nsg)]"
+                }
+            },
+            "copy": {
+                "name": "nicCI",
+                "count": "[parameters('VmCount')]"
+            },
+            "dependsOn": [
+                "PublicIP",
+                "VirtualNetwork",
+                "IPListConstructor",
+                "[variables('namePrefixes').nsg]",
+                "[variables('namePrefixes').loadBalancer]"
+            ]
+        },
+        /*********************************************************************
+        *** Network Security Group
+        *********************************************************************/
+        {
+            "comments": "Network security group - just SSH",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('namePrefixes').nsg]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[parameters('Location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-ssh",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        /*********************************************************************
+        *** Public IP
+        ***
+        *** Execute one of publicIPAddress-{new,existing}.json, depending on 
+        *** whether the PublicIP exists.
+        *********************************************************************/
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "PublicIP",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'publicip-', parameters('publicIPAddressExists'), '.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "PublicIPNameForNew": {
+                        "value": "[variables('namePrefixes').publicip]"
+                    },
+                    "PublicIPNameExisting": {
+                        "value": "[parameters('publicIPAddressName')]"
+                    },
+                    "PublicIPAllocationMethod": {
+                        "value": "[parameters('publicIPAllocationMethod')]"
+                    },
+                    "IdleTimeoutInMinutes": {
+                        "value": "[parameters('publicIPIdleTimeoutInMinutes')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** Load Balancer
+        *********************************************************************/
+        { /* build a list of NAT rules for the loadBalancer */
+            "type": "Microsoft.Resources/deployments",
+            "name": "NATListConstructor",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'generateNatRules.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": { /* SSH NAT Rules */
+                    "ruleNamePrefix": {
+                        "value": "[variables('natRulePrefix')]"
+                    },
+                    "ruleCount": {
+                        "value": "[parameters('VmCount')]"
+                    },
+                    "frontendPortBase": {
+                        "value": 50000
+                    },
+                    "backendPort": {
+                        "value": 22
+                    },
+                    "protocol": {
+                        "value": "Tcp"
+                    },
+                    "enableFloatingIP": {
+                        "value": false
+                    },
+                    "frontendIPConfigurationID": {
+                        "value": "[variables('resourceIDs').loadbalancerFE]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** LoadBalancer - one shared.  
+        ***
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163574.aspx     
+        *********************************************************************/
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('namePrefixes').loadBalancer]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "PublicIP",
+                "VirtualNetwork",
+                /* "[variables('resourceIDs').publicIP]", */
+                /* "[reference('PublicIP').outputs.PublicIPResourceID]",*/
+                "NATListConstructor"
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "LoadBalancerFrontEnd",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[reference('PublicIP').outputs.PublicIPResourceID.value]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "BackendPool1"
+                        /* "id": "[variables('resourceIDs').loadbalancerBEP]"*/
+                    }
+                ],
+                "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
+                "loadBalancingRules": [
+                    {
+                        "name": "LBRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/tcpProbe')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "tcpProbe",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": 80,
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+            }
+        },
+        /*********************************************************************
+        *** One Virtual Network (or reference an existing one) 
+        ***
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163661.aspx     
+        *********************************************************************/
+        { /* construct a reference to an existing VNET or a build one then do so. */
+            "type": "Microsoft.Resources/deployments",
+            "name": "VirtualNetwork",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vnetReferencerUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": { /* SSH NAT Rules */
+                    "NetworkName": {
+                        "value": "[parameters('NetworkName')]"
+                    },
+                    "NetworkAddressPrefix": { /* e.g., 1.2.3.4/16 */
+                        "value": "[parameters('NetworkAddressPrefix')]"
+                    },
+                    "SubnetName": {
+                        "value": "[parameters('SubnetName')]"
+                    },
+                    "SubnetAddressPrefix": {
+                        "value": "[parameters('SubnetAddressPrefix')]"
+                    },
+                    "SubnetStartAddress": {
+                        "value": "[parameters('SubnetStartAddress')]"
+                    },
+                    "ResourceGroupName": { /* the RG which owns the existing VNET */
+                        "value": "[parameters('ResourceGroupName')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** Set of Virtual Machines      
+        *********************************************************************/
+        {
+            "comments": "The set of Virtual Machines",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
+            "apiVersion": "[variables('apiVersions').compute]",
+            "location": "[parameters('Location')]",
+            "tags": {},
+            "properties": {
+                "availabilitySet": {
+                    "id": "[variables('resourceIDs').availabilitySet]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('VmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('imageReference')]",
+                    "osDisk": {
+                        "name": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-OS')]",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat('https://',parameters('saListByVM')[copyIndex()],'.blob.core.windows.net/vhds/', variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-OS.vhd')]"
+                        },
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-Data-0')]",
+                            "createOption": "Empty",
+                            "vhd": {
+                                "uri": "[concat('https://',parameters('saListByVM')[copyIndex()], '.blob.core.windows.net/vhds/', variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-Data-0.vhd')]"
+                            },
+                            "caching": "None",
+                            "diskSizeGB": "1023"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'))]",
+                    "adminUsername": "[parameters('AdminUserName')]",
+                    "linuxConfiguration": "[variables('linuxConfiguration')]",
+                    "secrets": [],
+                    "adminPassword": "[parameters('AuthCredential')]" /* TODO: fix for SSH */
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('namePrefixes').nic,padLeft(copyIndex(),3,'0')))]"
+                        }
+                    ]
+                }
+            },
+            "copy": {
+                "name": "vmCI",
+                "count": "[parameters('VmCount')]"
+            },
+            "dependsOn": [
+                "[variables('resourceIDs').availabilitySet]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('saListByVM')[copyIndex()])]",
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('namePrefixes').nic,padLeft(copyIndex(),3,'0')))]"
+            ]
+        },
+        { /* VM Extension to customize those VMs. */
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'),'/Config')]",
+            "apiVersion": "2015-05-01-preview",
+            "location": "[parameters('Location')]",
+            "copy": {
+                "name": "vmExtLoop",
+                "count": "[parameters('VmCount')]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.OSTCExtensions",
+                "type": "CustomScriptForLinux",
+                "typeHandlerVersion": "1.5",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": "[variables('extensionScripts')]",
+                    "commandToExecute": "[concat('perl ./', variables('extensionScript'),' ',variables('neoClusterPort'),' ',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ', reference('IPListConstructor').outputs.IPList.value[copyIndex()],' ',parameters('cacheMemoryPercentage'),' ',variables('extensionSourceConfig'),' ',variables('extensionTargetConfig'))]"
+                }
+            }
+        }
+    ]
+}

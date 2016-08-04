@@ -1,0 +1,106 @@
+{
+    /* Generate a list of IP Addresses - Note currently no idea about subnet mask, just sequential from starting point */
+    /* Note: no special check done for subnet overflow - doesn't take CIDR mask into account */
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "firstOnSubnet": {
+            "type": "int",
+            "defaultValue": 4,
+            "metadata": {
+                "description": "First IP available on Subnet .. on Azure, usually *.4"
+            }
+        },
+        "subnetCIDR": {
+            "type": "string",
+            "defaultValue": "10.0.1.0/24",
+            "metadata": {
+                "description": "Address of the network, with the netmask already applied."
+            }
+        },
+        "addressCount": {
+            "type": "int",
+            "defaultValue": 10,
+            "metadata": {
+                "description": "Number of IP addresses to be generated"
+            }
+        },
+        "ArtifactsBase": {
+            "type": "string",
+            "metadata": {
+                "artifactsBaseUrl": ""
+            },
+            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+        }
+    },
+    "variables": {
+        "SubnetWithoutCIDR":    "[split(parameters('subnetCIDR'), '/')[0]]",
+        "NetworkAddressParts": "[split(variables('SubnetWithoutCIDR'),'.')]",
+        "NetworkAddressPartsInt": [
+            "[int(variables('NetworkAddressParts')[0])]",
+            "[int(variables('NetworkAddressParts')[1])]",
+            "[int(variables('NetworkAddressParts')[2])]",
+            "[int(variables('NetworkAddressParts')[3])]"
+        ],
+        "intNetworkAddress": "[int(add(mul(variables('NetworkAddressPartsInt')[0],16777216),add(mul(variables('NetworkAddressPartsInt')[1],65536),add(mul(variables('NetworkAddressPartsInt')[2],256),variables('NetworkAddressPartsInt')[3]))))]",
+        "firstAddress": "[add(parameters('firstOnSubnet'), variables('intNetworkAddress'))]",
+        "stepNamePrefix": "IPList-concatStep-"
+    },
+    "resources": [
+        { /* Dummy Step 0 to get a one-behind starting state for iterative list build from empty list. */
+            "type": "Microsoft.Resources/deployments",
+            "name": "[concat(variables('stepNamePrefix'), '0')]",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('ArtifactsBase'), '/noResourceAppend.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "prefix": {
+                        "value": []
+                    },
+                    "suffix": {
+                        "value": []
+                    }
+                }
+            }
+        },
+        { /* Build a list of NAT rules by appending this one to the previous iteration's result */
+            "type": "Microsoft.Resources/deployments",
+            "name": "[concat(variables('stepNamePrefix'), copyIndex(1))]",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat(variables('stepNamePrefix'), copyIndex())]"
+            ],
+            "copy": {
+                "name": "rCount",
+                "count": "[parameters('addressCount')]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('ArtifactsBase'), '/noResourceAppend.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "prefix": { /* result of previous pass */
+                        "value": "[reference(concat(variables('stepNamePrefix'), copyIndex())).outputs.newList.value]"
+                    },
+                    "suffix": { /* the next IP Address -- go from UInt32, back to textual representation such as: 10.0.1.32 */
+                        "value": [
+                           "[concat(string(div(add(variables('firstAddress'), copyIndex()),16777216)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),65536),256)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),256),256)),'.',string(mod(add(variables('firstAddress'), copyIndex()),256)))]"
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "IPList": {
+            "type": "array",
+            "value": "[reference(concat(variables('stepNamePrefix'), parameters('addressCount'))).outputs.newList.value]"
+        }
+    }
+}

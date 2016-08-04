@@ -1,0 +1,208 @@
+{
+    "handler": "Microsoft.Compute.MultiVm",
+    "version": "0.0.1-preview",
+    "parameters": {
+        "basics": [
+
+            {
+                "name": "adminUsername",
+                "type": "Microsoft.Compute.UserNameTextBox",
+                "label": "Admin Account Name",
+                "toolTip": "Administrator user name used for SSH to your VMs. 'admin' and 'root' are not valid",
+                "osPlatform": "Linux"
+            },
+            {
+                "name": "adminCredentials",
+                "type": "Microsoft.Compute.CredentialsCombo",
+                "label": {
+                    "authenticationType": "Authentication type",
+                    "password": "Password",
+                    "confirmPassword": "Confirm password",
+                    "sshPublicKey": "SSH public key",
+                    "osPlatform": "Linux"
+                },
+                "toolTip": {
+                    "authenticationType": "",
+                    "password": "Admin password for the virtual machines.",
+                    "sshPublicKey": ""
+                },
+                "constraints": {
+                    "required": true
+                },
+                "options": {
+                    "hideConfirmation": false
+                },
+                "osPlatform": "Linux"
+            }
+        ],
+        "steps": [
+            {
+                "name": "neo4jConfig",
+                "label": "Neo4J Settings",
+                "subLabel": {
+                    "preValidation": "Configure VMs",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Neo4J Settings",
+                "elements": [
+                    {
+                        "name": "ClusterName",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Neo Cluster Name",
+                        "defaultValue": "neo",
+                        "toolTip": "The name for your Neo4J cluster.  Used for VM and other name prefixes.",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^[a-zA-Z0-9\\.\\-]{1,30}$",
+                            "validationMessage": "Alphanumeric characters, period(.) and dash(-) are allowed.  The value must be 1-30 characters long."
+                        },
+                        "options": { }
+                    },
+                    {
+                        "name": "VmCount",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Number of VMs",
+                        "defaultValue": "2",
+                        "toolTip": "Number of VMs in the Neo4j cluster",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^(1|2|3|4|5|6|7|8|9|10|11|12)$",
+                            "validationMessage": "Number of VM must be between 1 and 12, inclusive."
+                        },
+                        "visible": true
+                    },
+                    {
+                        "name": "VmSize",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Size of each VM",
+                        "toolTip": "",
+                        "recommendedSizes": [
+                            "Standard_D4_v2",
+                            "Standard_D5_v2",
+                            "Standard_D4", 
+                            "Standard_D5"
+                        ],
+                        "constraints": {
+                            "allowedSizes": [ ],
+                            "excludedSizes": [
+                                "Basic_A0",
+                                "Basic_A1",
+                                "Basic_A2",
+                                "Basic_A3",
+                                "Standard_A0",
+                                "Standard_A1",
+                                "Standard_A2",
+                                "Standard_A3",
+                                "Standard_D1",
+                                "Standard_D2",
+                                "Standard_D3",
+                                "Standard_D1_v2",
+                                "Standard_D2_v2",
+                                "Standard_D3_v2",
+                                "Standard_DS1",
+                                "Standard_DS2",
+                                "Standard_DS3"
+                            ]
+                        },
+                        "osPlatform": "Linux",
+                        "imageReference": {
+                            "publisher": "Canonical",
+                            "offer": "UbuntuServer",
+                            "sku": "16.04.0-LTS"
+                        },
+                        "count": "[steps('neo4jConfig').VmCount]",
+                        "visible": true
+                    },
+                    {
+                        "name": "QueryGB",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "GB of memory to reserve for Query space",
+                        "defaultValue": "5.5",
+                        "toolTip": "Portion of VM memory set aside for query processing (1 to 12GB in 0.5GB increments)",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^(1|1.5|2|2.5|3|3.5|4|4.5|5|5.5|6|6.5|7|7.5|8|8.5|9|9.5|10|10.5|11|11.5|12)$",
+                            "validationMessage": "GB between 1 and 12 in 0.5GB increments.Number of VM must be between 1 and 12, inclusive."
+                        },
+                        "visible": true
+                    },
+                    {
+                        "name": "Vnet",
+                        "type": "Microsoft.Network.VirtualNetworkCombo",
+                        "label": {
+                            "virtualNetwork": "Virtual network for the Cluster",
+                            "subnets": "Subnet for VMs"
+                        },
+                        "toolTip": {
+                            "virtualNetwork": "",
+                            "subnets": ""
+                        },
+                        "defaultValue": {
+                            "name": "neoVNET-01",
+                            "addressPrefixSize": "/16"
+                        },
+                        "constraints": {
+                            "minAddressPrefixSize": "/16"
+                        },
+                        "options": {
+                            "hideExisting": false
+                        },
+                        "subnets": {
+                            "subnet1": {
+                                "label": "Subnet for Cluster VMs",
+                                "defaultValue": {
+                                    "name": "clusterSubnet",
+                                    "addressPrefixSize": "/24"
+                                },
+                                "constraints": {
+                                    "minAddressPrefixSize": "/16",
+                                    "minAddressCount": 12,
+                                    "requireContiguousAddresses": true
+                                }
+                            }
+                        },
+                        "visible": true
+                    },
+                    {
+                        "name": "PublicIP",
+                        "type": "Microsoft.Network.PublicIpAddressCombo",
+                        "label": {
+                            "publicIpAddress": "Public IP address",
+                            "domainNameLabel": "Domain name label"
+                        },
+                        "toolTip": {
+                            "publicIpAddress": "",
+                            "domainNameLabel": ""
+                        },
+                        "defaultValue": {
+                            "publicIpAddressName": "ip01",
+                            "domainNameLabel": "foobar"
+                        },
+                        "constraints": {
+                            "required": {
+                                "domainNameLabel": true
+                            }
+                        },
+                        "options": {
+                            "hideNone": false,
+                            "hideDomainNameLabel": false,
+                            "hideExisting": false
+                        },
+                        "visible": true
+                    }
+                ]
+            }
+        ],
+        "outputs": {
+            "ClusterNamePrefix": "[steps('neo4jConfig').ClusterName]",
+            "VmCount": "[steps('neo4jConfig').VmCount]",
+            "VmSize": "[steps('neo4jConfig').VmSize]",
+            "VnetName": "[steps('neo4jConfig').Vnet]",
+            "VnetIsNew": "[equals(steps('neo4jConfig').Vnet.newOrExisting, 'new')]",
+            "AdminUserName": "[basics('adminUsername')]",
+            "AuthBySSH": "[equals(basics('adminCredentials').authenticationType,'sshPublicKey')]",
+            "AuthCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
+            "Location": "[location()]"
+        }
+    }
+}

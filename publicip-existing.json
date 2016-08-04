@@ -1,0 +1,76 @@
+{
+    /*******************************************************************
+    ** Use an existing Public IP Instance
+    *******************************************************************/
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "PublicIPNameForNew": {
+            "type": "string",
+            "metadata": {
+                "description": "Name to use for the new PublicIP instance"
+            }
+        },
+        "PublicIPNameExisting": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Name of an existing PublicIP instance to use.  e.g. 'MyIP001'"
+            }
+        },
+        "PublicIPAllocationMethod": {
+            "type": "string",
+            "allowedValues": [
+                "Static",
+                "Dynamic"
+            ],
+            "defaultValue": "Dynamic"
+        },
+        "IdleTimeoutInMinutes": {
+            "type": "int",
+            "defaultValue": 10,
+            "metadata": {
+                "description": "Time to wait before reclaiming a 'no-traffic' connection as idle"
+            }
+        },
+        "ResourceGroupName": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
+            "metadata": {
+                "description": "Name of Resource group to use -- ignored for new PublicIP"
+            }
+        },
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Azure location at which to create the new PublicIP instance"
+            }
+        },
+        "ApiVersions": {
+            "type": "object",
+            "defaultValue": {
+                "network": "2016-07-01"
+            },
+            "metadata": {
+                "description": "Optional override of Resource Provider version."
+            }
+        },
+        "ArtifactsBase": {
+            "type": "string",
+            "metadata": {
+                "artifactsBaseUrl": "", /* do not remove or change this property */
+                "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
+            },
+            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+        }
+    },
+    "variables": {},
+    "resources": [],
+    "outputs": {
+        "PublicIPResourceID": {
+            "type": "string",
+            "value": "[resourceID('Microsoft.Network/publicIPAddresses', parameters('PublicIPNameExisting'))]"
+        }
+    }
+}
