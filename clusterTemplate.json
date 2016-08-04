@@ -2,6 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "Neo4jVersion": {
+            "type": "string",
+            "defaultValue": ""
+        },
         "AdminUserName": {
             "type": "securestring"
         },
@@ -103,7 +107,7 @@
                 "artifactsBaseUrl": "", /* do not remove or change this property */
                 "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
             },
-            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
         }
     },
     "variables": {
@@ -162,15 +166,13 @@
         },
         "linuxConfiguration": "[variables(concat('linuxConfigurationSSH-',parameters('AuthBySSH')))]",
         /* Configuration scripts */
-        "extensionSourceConfig": "neo4j.before.conf.txt", /* input to modify */
-        "extensionTargetConfig": "/etc/neo4j/neo4j.conf", /* config output path on VM */
-        "extensionScript": "fixNeoConfig.pl", /* script to customize config */
+        "extensionScript": "setup.sh", /* script to customize config */
         /* files we need copied to the VM */
         "extensionScripts": [
-            "[concat(variables('artifactsBase'), variables('extensionSourceConfig'))]",
-            "[concat(variables('artifactsBase'), variables('extensionScript'))]"
+            "[concat(variables('artifactsBase'), variables('extensionScript'))]",
         ],
         "neoClusterPort": "5300", /* Neo Communication port used all nodes */
+        "neoTransactionPort": "5400", /* Neo Communication port used all nodes */
         "sq": "'" /* work around escaping of single quotes within an expression string */
     },
     "resources": [
@@ -322,7 +324,7 @@
         /*********************************************************************
         *** Public IP
         ***
-        *** Execute one of publicIPAddress-{new,existing}.json, depending on 
+        *** Execute one of publicIPAddress-{new,existing}.json, depending on
         *** whether the PublicIP exists.
         *********************************************************************/
         {
@@ -398,9 +400,9 @@
             }
         },
         /*********************************************************************
-        *** LoadBalancer - one shared.  
+        *** LoadBalancer - one shared.
         ***
-        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163574.aspx     
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163574.aspx
         *********************************************************************/
         {
             "type": "Microsoft.Network/loadBalancers",
@@ -468,9 +470,9 @@
             }
         },
         /*********************************************************************
-        *** One Virtual Network (or reference an existing one) 
+        *** One Virtual Network (or reference an existing one)
         ***
-        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163661.aspx     
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163661.aspx
         *********************************************************************/
         { /* construct a reference to an existing VNET or a build one then do so. */
             "type": "Microsoft.Resources/deployments",
@@ -508,7 +510,7 @@
             }
         },
         /*********************************************************************
-        *** Set of Virtual Machines      
+        *** Set of Virtual Machines
         *********************************************************************/
         {
             "comments": "The set of Virtual Machines",
@@ -591,7 +593,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": "[variables('extensionScripts')]",
-                    "commandToExecute": "[concat('perl ./', variables('extensionScript'),' ',variables('neoClusterPort'),' ',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ', reference('IPListConstructor').outputs.IPList.value[copyIndex()],' ',parameters('cacheMemoryPercentage'),' ',variables('extensionSourceConfig'),' ',variables('extensionTargetConfig'))]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq')),' ',variables('extensionScripts')]"
                 }
             }
         }

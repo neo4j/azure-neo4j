@@ -12,10 +12,10 @@
             "value": true
         },
         "AuthCredential": {
-            "value": "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEA2VN9Gsxn7cWTVM2Dh2INa4mWK+It3u5glyAHu96Yv/crnWKBDd5yAswv1k0GZFXreWNtAyJ6BkTujgw4zXFMygTsjv2pQ2vKBeUnSoF9Bxfz6gkCy2A4oQpmbuQapQNoe3ShsYJYa7E9prHeMBopWfdb9ON1VfvPjUSu3hW6yxRyHz3ZJRr+wSIv50rLGTUfEo8BMX0CCmmScqSgyasoKZdKLyleLkuI150iDmvbqFq3HOmTcGIVla+hqaBBM9o4XiTl3X7XxpHQ89dcWJWv7hn6odx0uCsb3klLk+G+E7RV6dM07sR/u8eOGQp3cN2hq0QgKy10d9xvSfaSnq09+w== rsa-key-20160722"
+            "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2zeUQQAPpfpbUWVUXFJu73dgpeW2kPIBTqvbMIbcgfGj/rFtEtgwCYLlnNWu9hlx/hYa8Iof3ffXKswuHc5rBoEGPjWquCZEyuyUrNCCUKvXjysE+J988+GkVpCs47iKO01Gi7eKZPB0VjTyTERpy3mrgL8UOTSnjW92zmQ2FI4IXmha4HP36K9zMtPR9Nmg7mQIqxNe8SG8GC9gAoeEHSH8TztNZXvV0XPzllbW9ADvgQcBJmenXT6lCVC8qK/Pt8o0EY5Ac8ZEOr79PIx7b20ojomTJdNuup24o/6cJyVg6Kh3QAwqVCaA6dxKQbCwa/haY8HUDXJJnp6GzK9+N tobias@thobe.org"
         },
         "VmCount": {
-            "value": 2
+            "value": 1
         },
         "VmSize": {
             "value": "Standard_A1"
@@ -54,7 +54,7 @@
             "value": 42
         },
         "ArtifactsBase": {
-            "value": "https://atest221sc.blob.core.windows.net/arm"
+            "value": "https://raw.githubusercontent.com/thobe/carcassour/master"
         }
     }
 }

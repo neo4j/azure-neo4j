@@ -46,6 +46,25 @@
                 "bladeTitle": "Neo4J Settings",
                 "elements": [
                     {
+                        "name": "Neo4jVersion",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "Neo4j Version",
+                        "defaultValue": "Most recent version",
+                        "constraints": {
+                            "required": true,
+                            "allowedValues": [
+                                {
+                                    "label": "Most recent version",
+                                    "value": "default"
+                                },
+                                {
+                                    "label": "Neo4j 3.0.4",
+                                    "value": "3.0.4"
+                                }
+                            ]
+                        }
+                    },
+                    {
                         "name": "ClusterName",
                         "type": "Microsoft.Common.TextBox",
                         "label": "Neo Cluster Name",
@@ -79,7 +98,7 @@
                         "recommendedSizes": [
                             "Standard_D4_v2",
                             "Standard_D5_v2",
-                            "Standard_D4", 
+                            "Standard_D4",
                             "Standard_D5"
                         ],
                         "constraints": {
@@ -152,7 +171,7 @@
                                 "label": "Subnet for Cluster VMs",
                                 "defaultValue": {
                                     "name": "clusterSubnet",
-                                    "addressPrefixSize": "/24"
+                                    "addressPrefixSize": "/16"
                                 },
                                 "constraints": {
                                     "minAddressPrefixSize": "/16",
@@ -195,6 +214,7 @@
         ],
         "outputs": {
             "ClusterNamePrefix": "[steps('neo4jConfig').ClusterName]",
+            "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "VmCount": "[steps('neo4jConfig').VmCount]",
             "VmSize": "[steps('neo4jConfig').VmSize]",
             "VnetName": "[steps('neo4jConfig').Vnet]",

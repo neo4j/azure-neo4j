@@ -2,6 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "Neo4jVersion": {
+            "type": "string",
+            "defaultValue": ""
+        },
         "AdminUserName": {
             "type": "securestring"
         },
@@ -142,7 +146,7 @@
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('artifactsBase'), 'mainTemplate-Level2.json')]",
+                    "uri": "[concat(variables('artifactsBase'), 'clusterTemplate.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
