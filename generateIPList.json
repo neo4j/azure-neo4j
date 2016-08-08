@@ -30,7 +30,7 @@
             "metadata": {
                 "artifactsBaseUrl": ""
             },
-            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
         }
     },
     "variables": {

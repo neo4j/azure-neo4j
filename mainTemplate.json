@@ -101,7 +101,7 @@
                 "artifactsBaseUrl": "", /* do not remove or change this property */
                 "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
             },
-            "defaultValue": "https://atest221sc.blob.core.windows.net/arm"
+            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
         }
     },
     "variables": {
