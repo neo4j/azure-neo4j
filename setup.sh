@@ -1,6 +1,7 @@
 #!/bin/bash
 # Environment parameters:
 #    HEAP_PERCENTAGE     fraction of RAM used by the JVM heap
+#    NEO4J_PASSWORD      password
 #    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
 #    [COORD_PORT]        port to use for Neo4j HA communication       (HA, optional)
 #    [DATA_PORT]         port to use for Neo4j HA communication       (HA, optional)
@@ -96,6 +97,37 @@ configure_ha() {
     " /etc/neo4j/neo4j.conf
 }
 
+set_neo4j_password() {
+    # use curl to set the password (if given)
+    if [ -n "$NEO4J_PASSWORD" ]; then
+        local  end="$((SECONDS+100))"
+        while true; do
+            # Check if the password is set (and if the server is up)
+            local http_code="$(curl --silent --write-out %{http_code} --user "neo4j:${NEO4J_PASSWORD}" --output /dev/null http://localhost:7474/db/data/ || true)"
+
+            if [[ "${http_code}" = "200" ]]; then
+                break;
+            fi
+
+            if [[ "${http_code}" = "401" ]]; then
+                # Set the password (by authenticating using default password)
+                curl --fail --silent --show-error --user neo4j:neo4j \
+                     --data '{"password": "'"${NEO4J_PASSWORD}"'"}' \
+                     --header 'Content-Type: application/json' \
+                     http://localhost:7474/user/neo4j/password
+                break;
+            fi
+
+            if [[ "${SECONDS}" -ge "${end}" ]]; then
+                echo Failed to set neo4j password 1>&2
+                exit 1
+            fi
+
+            sleep 1
+        done
+    fi
+}
+
 configure_lvm() {
     # parameters: <device-file>
 
@@ -134,3 +166,4 @@ configure_lvm /dev/sdc
 enable_lvm_autoextend
 configure_neo4j
 systemctl start neo4j
+set_neo4j_password

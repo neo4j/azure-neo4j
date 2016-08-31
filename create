@@ -83,16 +83,23 @@ PARAMETERS=$(cat<<JSON
 JSON
 )
 
+__CREATED=""
 if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
     if ! azure group create -n "$RESOURCE_GROUP" -l "$LOCATION"; then
         exit $?
     fi
+    __CREATED=yes
 fi
 
-azure group deployment create\
+azure group deployment create -vv\
     --template-uri https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json \
     -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
+CODE=$?
+
+if [ -n "$__CREATED" ]; then
+    azure group delete -q "$RESOURCE_GROUP"
+fi
 
 #azure group deployment create -f mainTemplate.json -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 
-exit $?
+exit $CODE

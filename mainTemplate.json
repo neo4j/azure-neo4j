@@ -6,6 +6,10 @@
             "type": "string",
             "defaultValue": ""
         },
+        "Neo4jPassword": {
+            "type": "securestring",
+            "defaultValue": ""
+        },
         "AdminUserName": {
             "type": "securestring"
         },
@@ -150,6 +154,12 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
+                    "Neo4jVersion": {
+                        "value": "[parameters('Neo4jVersion')]"
+                    },
+                    "Neo4jPassword": {
+                        "value": "[parameters('Neo4jPassword')]"
+                    },
                     "AdminUserName": {
                         "value": "[parameters('AdminUserName')]"
                     },
