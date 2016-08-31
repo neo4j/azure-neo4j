@@ -597,7 +597,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": "[variables('extensionScripts')]",
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq')),' ',variables('extensionScripts')]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ',variables('extensionScripts'))]"
                 }
             }
         }
