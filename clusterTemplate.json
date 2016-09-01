@@ -112,6 +112,10 @@
                 "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
             },
             "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
+        },
+        "extensionScript": {
+            "type": "string",
+            "defaultValue": "setup.sh"
         }
     },
     "variables": {
@@ -169,11 +173,10 @@
             "disablePasswordAuthentication": false
         },
         "linuxConfiguration": "[variables(concat('linuxConfigurationSSH-',parameters('AuthBySSH')))]",
-        /* Configuration scripts */
-        "extensionScript": "setup.sh", /* script to customize config */
         /* files we need copied to the VM */
         "extensionScripts": [
-            "[concat(variables('artifactsBase'), variables('extensionScript'))]",
+            "[concat(variables('artifactsBase'), parameters('extensionScript'))]",
+            "[concat(variables('artifactsBase'), 'setup.sh')]", /* always include main script */
         ],
         "neoClusterPort": "5300", /* Neo Communication port used all nodes */
         "neoTransactionPort": "5400", /* Neo Communication port used all nodes */
@@ -597,7 +600,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": "[variables('extensionScripts')]",
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ',variables('extensionScript'))]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ',parameters('extensionScript'))]"
                 }
             }
         }

@@ -15,12 +15,31 @@ fi
 if [ -z "$INSTANCES" ]; then
     INSTANCES=1
 fi
+if [ -z "$NEO4J_PASSWORD" ]; then
+    read -p "Neo4j Password: " -s NEO4J_PASSWORD
+    echo
+fi
 
 if [ -z "$PUBKEY" ]; then
     PUBKEY=$(cat ~/.ssh/id_rsa.pub)
 fi
 if [ -z "$USERNAME" ]; then
     USERNAME=$(whoami)
+fi
+
+EXTENSION=""
+if [ -n "$1" -a -f "$1" ]; then
+    if [[ "$1" != *"/"* ]]; then
+        if git -C "$(dirname $0)" ls-files "$1" --error-unmatch; then
+            EXTENSION=$(cat<<EXTENSION_JSON
+,
+    "extensionScript": {
+        "value": "$1"
+    }
+EXTENSION_JSON
+)
+        fi
+    fi
 fi
 
 PARAMETERS=$(cat<<JSON
@@ -30,6 +49,9 @@ PARAMETERS=$(cat<<JSON
     },
     "ClusterNamePrefix": {
         "value": "$CLUSTERNAME_PREFIX"
+    },
+    "Neo4jPassword": {
+        "value": "$NEO4J_PASSWORD"
     },
     "AuthBySSH": {
         "value": true
@@ -78,10 +100,13 @@ PARAMETERS=$(cat<<JSON
     },
     "ArtifactsBase": {
         "value": "https://raw.githubusercontent.com/thobe/carcassour/master"
-    }
+    }$EXTENSION
 }
 JSON
 )
+
+#echo "$PARAMETERS"
+#exit
 
 __CREATED=""
 if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
@@ -91,12 +116,12 @@ if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
     __CREATED=yes
 fi
 
-azure group deployment create -vv\
+azure group deployment create\
     --template-uri https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json \
     -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 CODE=$?
 
-if [ -n "$__CREATED" ]; then
+if [ $CODE -ne 0 -a -n "$__CREATED" ]; then
     azure group delete -q "$RESOURCE_GROUP"
 fi
 
