@@ -597,8 +597,10 @@
                     "fileUris": [
                         "[concat(variables('artifactsBase'), parameters('extensionScript'))]",
                         "[concat(variables('artifactsBase'), 'setup.sh')]" /* always include main script */
-                    ],
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ',parameters('extensionScript'))]"
+                    ]
+                },
+                "protectedSettings": {
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
                 }
             }
         }
