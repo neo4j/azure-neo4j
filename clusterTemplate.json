@@ -596,7 +596,7 @@
                 "settings": {
                     "fileUris": [
                         "[concat(variables('artifactsBase'), parameters('extensionScript'))]",
-                        "[concat(variables('artifactsBase'), 'setup.sh')]" /* always include main script */
+                        "[concat(variables('artifactsBase'), 'setup.sh')]"
                     ]
                 },
                 "protectedSettings": {
