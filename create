@@ -30,7 +30,7 @@ fi
 EXTENSION=""
 if [ -n "$1" -a -f "$1" ]; then
     if [[ "$1" != *"/"* ]]; then
-        if git -C "$(dirname $0)" ls-files "$1" --error-unmatch; then
+        if git -C "$(dirname $0)" ls-files "$1" --error-unmatch >/dev/null; then
             EXTENSION=$(cat<<EXTENSION_JSON
 ,
     "extensionScript": {

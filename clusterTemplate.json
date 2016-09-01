@@ -176,7 +176,7 @@
         /* files we need copied to the VM */
         "extensionScripts": [
             "[concat(variables('artifactsBase'), parameters('extensionScript'))]",
-            "[concat(variables('artifactsBase'), 'setup.sh')]", /* always include main script */
+            "[concat(variables('artifactsBase'), 'setup.sh')]" /* always include main script */
         ],
         "neoClusterPort": "5300", /* Neo Communication port used all nodes */
         "neoTransactionPort": "5400", /* Neo Communication port used all nodes */
