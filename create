@@ -4,13 +4,13 @@ if [ -z "$RESOURCE_GROUP" ]; then
     RESOURCE_GROUP=Neo4j
 fi
 if [ -z "$DEPLOYMENT" ]; then
-    DEPLOYMENT=HA
+    DEPLOYMENT="$(TZ=0 date +'Neo4j-HA-%Y%m%dT%H%M%SZ')"
 fi
 if [ -z "$LOCATION" ]; then
     LOCATION="East US"
 fi
 if [ -z "$CLUSTERNAME_PREFIX" ]; then
-    CLUSTERNAME_PREFIX="neoTestAA"
+    CLUSTERNAME_PREFIX="neo$(cat /dev/urandom | env LC_CTYPE=C tr -cd 'a-z0-9A-Z' | head -c 8)"
 fi
 if [ -z "$INSTANCES" ]; then
     INSTANCES=1
@@ -117,7 +117,7 @@ if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
 fi
 
 azure group deployment create\
-    --template-uri https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json \
+    --template-uri "https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json" \
     -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 CODE=$?
 
