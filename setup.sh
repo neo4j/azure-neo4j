@@ -11,14 +11,15 @@
 
 # Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from HEAP_PERCENTAGE
 RAM_MEMORY=$(cat /proc/meminfo | grep ^MemTotal | sed -e 's/: */ /g' | cut -d\  -f2)
+RAM_MEMORY=$(expr $RAM_MEMORY - 2097152)
 if [ -n "$HEAP_PERCENTAGE" -a "$HEAP_PERCENTAGE" -gt 0 -a "$HEAP_PERCENTAGE" -lt 100 ]; then
     # Memory percentage given
     HEAP_MEMORY=$(expr $RAM_MEMORY \* $HEAP_PERCENTAGE / 100)
 else
-    # Memory percentage not specified (or invalid)
+    # Memory percentage not specified (or invalid) - used 2/5 of RAM
     HEAP_MEMORY=$(expr $RAM_MEMORY \* 2 / 5)
 fi
-PAGE_MEMORY=$(expr $RAM_MEMORY - 2097152 - $HEAP_MEMORY)
+PAGE_MEMORY=$(expr $RAM_MEMORY - $HEAP_MEMORY)
 
 # (Default value for) COORD_PORT
 if [ -z "$COORD_PORT" ]; then
@@ -43,6 +44,28 @@ elif [ -z "$HOST_IPS" ]; then
 fi
 
 
+setting() {
+    local setting="${1}"
+    local value="${2}"
+    local file="${3:-neo4j.conf}"
+
+    if [ ! -f "/etc/neo4j/${file}" ]; then
+        if [ -f "/etc/neo4j/neo4j.conf" ]; then
+            file="neo4j.conf"
+        fi
+    fi
+
+    if [ -n "${value}" ]; then
+        if ! sed -i "/^ *#* *${setting//./\\.} *=.*$/{s//${setting}=${value}/;h}; $ {x;/./{x;q0};x;q1}" "/etc/neo4j/${file}"; then
+            echo "${setting}=${value}" >>"/etc/neo4j/${file}"
+        fi
+    else
+        # no value given, comment out the setting in the file (if present)
+        sed -i "s/^\( *${setting//./\\.} *=.*\)/#\1/" "/etc/neo4j/${file}"
+    fi
+}
+
+
 install_neo4j() {
     # Zulu deb sources
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9
@@ -64,17 +87,24 @@ install_neo4j() {
 configure_neo4j() {
     # uses: PAGE_MEMORY, HEAP_MEMORY, MY_ID, MY_IP, HOST_IPS, DATA_PORT, COORD_PORT
 
-    sed -i -e "
-        s/^#?dbms\.memory\.heap\.initial_size=.*$/dbms.memory.heap.initial_size=${HEAP_MEMORY}k/;
-        s/^#?dbms\.memory\.heap\.max_size=.*$/dbms.memory.heap.max_size=${HEAP_MEMORY}k/;
-    " /etc/neo4j/neo4j-wrapper.conf
+    if [  "$RAM_MEMORY" -gt 0 ]; then
+        setting dbms.memory.heap.initial_size "$(expr $HEAP_MEMORY / 1024)" neo4j-wrapper.conf
+        setting dbms.memory.heap.max_size "$(expr $HEAP_MEMORY / 1024)" neo4j-wrapper.conf
+        setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
+    fi
 
-    sed -i -e "
-        s/^#?dbms\.memory\.pagecache\.size=.*$/dbms.memory.pagecache.size=${PAGE_MEMORY}k/;
-        s/^#? ?dbms.connector.bolt.address=.*$/dbms.connector.bolt.address=0.0.0.0:7687/;
-        s/^#? ?dbms.connector.https.address=.*$/dbms.connector.bolt.address=0.0.0.0:7474/;
-        s/^dbms.connector.http.enabled=.*$/dbms.connector.http.enabled=false/;
-    " /etc/neo4j/neo4j.conf
+    setting dbms.connector.bolt.type    BOLT
+    setting dbms.connector.bolt.enabled true
+    setting dbms.connector.bolt.address "0.0.0.0:7687"
+
+    setting dbms.connector.https.type       HTTP
+    setting dbms.connector.https.enabled    true
+    setting dbms.connector.https.encryption TLS
+    setting dbms.connector.https.address    "0.0.0.0:7473"
+
+    setting dbms.connector.http.type    HTTP
+    setting dbms.connector.http.enabled true
+    setting dbms.connector.http.address "localhost:7474"
 
     if [ "$MY_IP" != "$HOST_IPS" ]; then
         configure_ha
@@ -88,13 +118,11 @@ configure_ha() {
     HOST_PORTS=$(printf ",%s" "${HOST_PORTS[@]}")
     HOST_PORTS=${HOST_PORTS:1}
 
-    sed -i -e "
-        s/^#?dbms\.mode=.*$/dbms.mode=HA/;
-        s/^#?ha\.server_id=.*$/ha.server_id=$MY_ID/;
-        s/^#?ha\.initial_hosts=.*$/ha.initial_hosts=$HOST_PORTS/;
-        s/^#?ha\.host\.data=.*$/ha.host.data=$MY_IP:$DATA_PORT/;
-        s/^#?ha\.host\.coordination=.*$/ha.host.coordination=$MY_IP:$COORD_PORT/;
-    " /etc/neo4j/neo4j.conf
+    setting dbms.mode            HA
+    setting ha.server_id         "$MY_ID"
+    setting ha.initial_hosts     "$HOST_PORTS"
+    setting ha.host.data         "$MY_IP:$DATA_PORT"
+    setting ha.host.coordination "$MY_IP:$COORD_PORT"
 }
 
 set_neo4j_password() {
@@ -140,10 +168,8 @@ configure_lvm() {
 }
 
 enable_lvm_autoextend() {
-    # parameters: -
-
     # create a script that automatically extends the VG
-    cat >/var/lib/neo4j/lvm-extend.sh <<SCRIPT
+    cat >/var/lib/neo4j/lvm-extend.sh <<"SCRIPT"
 #!/bin/sh
 DEVFILE=/dev/$(ls /sys${DEVPATH}/block)
 if [ -b "${DEVFILE}" ]; then
@@ -155,13 +181,15 @@ SCRIPT
     chmod +x /var/lib/neo4j/lvm-extend.sh
 
     # Add udev rules for running the script on scsi attach
-    cat >/etc/udev/rules.d/91-neo4j-lvm-extend.rules <<RULES
+    cat >/etc/udev/rules.d/91-neo4j-lvm-extend.rules <<"RULES"
 # Rules for extending the neo4j lvm volume group on attach of new drive
 ACTION=="add",SUBSYSTEM=="scsi",RUN+="/var/lib/neo4j/lvm-extend.sh"
 RULES
 }
 
 install_neo4j
+systemctl stop neo4j
+systemctl enable neo4j
 configure_lvm /dev/sdc
 enable_lvm_autoextend
 configure_neo4j
