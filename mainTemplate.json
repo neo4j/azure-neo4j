@@ -113,7 +113,7 @@
         },
         "httpsPort": {
             "type": "int",
-            "defaultValue": 433,
+            "defaultValue": 7473,
             "metadata": {
                 "description": "The port to use for (public) HTTPS access."
             }
