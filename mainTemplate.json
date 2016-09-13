@@ -174,7 +174,7 @@
         },
         { /* Call the "real" main template with original parameters plus the list of storage accounts */
             "type": "Microsoft.Resources/deployments",
-            "name": "[concat('CreateCluster-'),parameters('ClusterNamePrefix')]",
+            "name": "[concat('CreateCluster-',parameters('ClusterNamePrefix'))]",
             "apiVersion": "2015-01-01",
             "dependsOn": [
                 "SAConstructor"
