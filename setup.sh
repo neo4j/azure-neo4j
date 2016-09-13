@@ -104,7 +104,7 @@ configure_neo4j() {
 
     setting dbms.connector.http.type    HTTP
     setting dbms.connector.http.enabled true
-    setting dbms.connector.http.address "localhost:7474"
+    setting dbms.connector.http.address "0.0.0.0:7474"
 
     if [ "$MY_IP" != "$HOST_IPS" ]; then
         configure_ha

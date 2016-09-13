@@ -121,9 +121,9 @@ azure group deployment create\
     -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 CODE=$?
 
-if [ $CODE -ne 0 -a -n "$__CREATED" ]; then
-    azure group delete -q "$RESOURCE_GROUP"
-fi
+#if [ $CODE -ne 0 -a -n "$__CREATED" ]; then
+#    azure group delete -q "$RESOURCE_GROUP"
+#fi
 
 #azure group deployment create -f mainTemplate.json -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 

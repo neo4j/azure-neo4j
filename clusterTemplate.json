@@ -180,8 +180,8 @@
     "resources": [
         /*********************************************************************
         *** Provision the needed Storage Accounts
-	    ***
-	    *** https://msdn.microsoft.com/en-us/library/azure/mt163564.aspx
+        ***
+        *** https://msdn.microsoft.com/en-us/library/azure/mt163564.aspx
         *********************************************************************/
         {
             "type": "Microsoft.Storage/storageAccounts",
