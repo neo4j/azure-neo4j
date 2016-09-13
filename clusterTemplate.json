@@ -126,7 +126,7 @@
         "backendBoltPort": {
             "type": "int",
             "defaultValue": 7687
-        }
+        },
         "masterBoltPort": {
             "type": "int",
             "defaultValue": 7000
