@@ -96,7 +96,7 @@
             "defaultValue": -1,
             "maxValue": 100,
             "metadata": {
-                "description": "0..100% portion of Neo4J memory to dedicate to cache.  Negative values mean use current configuration file value."
+                "description": "0..100% portion of Neo4j memory to dedicate to cache.  Negative values mean use current configuration file value."
             }
         },
         "ArtifactsBase": {
@@ -110,6 +110,34 @@
         "extensionScript": {
             "type": "string",
             "defaultValue": "setup.sh"
+        },
+        "httpsPort": {
+            "type": "int",
+            "defaultValue": 433,
+            "metadata": {
+                "description": "The port to use for (public) HTTPS access."
+            }
+        },
+        "masterBoltPort": {
+            "type": "int",
+            "defaultValue": 7000,
+            "metadata": {
+                "description": "The port to use for (public) BOLT access to the primary instance."
+            }
+        },
+        "slaveBoltPort": {
+            "type": "int",
+            "defaultValue": 8000,
+            "metadata": {
+                "description": "The port to use for (public) BOLT access to the secondary instances."
+            }
+        },
+        "httpPort": {
+            "type": "int",
+            "defaultValue": 7474,
+            "metadata": {
+                "description": "The port to use for (private) HTTP access. This is used by the load balancer probes. Must not conflict with other ports."
+            }
         }
     },
     "variables": {
@@ -146,7 +174,7 @@
         },
         { /* Call the "real" main template with original parameters plus the list of storage accounts */
             "type": "Microsoft.Resources/deployments",
-            "name": "CallMain",
+            "name": "[concat('CreateCluster-'),parameters('ClusterNamePrefix')]",
             "apiVersion": "2015-01-01",
             "dependsOn": [
                 "SAConstructor"
@@ -232,6 +260,18 @@
                     },
                     "extensionScript": {
                         "value": "[parameters('extensionScript')]"
+                    },
+                    "httpsPort": {
+                        "value": "[parameters('httpsPort')]"
+                    },
+                    "masterBoltPort": {
+                        "value": "[parameters('masterBoltPort')]"
+                    },
+                    "slaveBoltPort": {
+                        "value": "[parameters('slaveBoltPort')]"
+                    },
+                    "httpPort": {
+                        "value": "[parameters('httpPort')]"
                     }
                 }
             }

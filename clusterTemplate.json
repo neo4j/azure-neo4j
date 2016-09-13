@@ -87,17 +87,11 @@
             "defaultValue": 10,
             "minValue": 4,
             "maxValue": 30,
-            "metadata": {
-                "description": "Time to wait before reclaiming a 'no-traffic' connection as idle"
-            }
         },
         "cacheMemoryPercentage": {
             "type": "int",
             "defaultValue": -1,
             "maxValue": 100,
-            "metadata": {
-                "description": "0..100% portion of Neo4J memory to dedicate to cache.  Negative values mean use current configuration file value."
-            }
         },
         "saList": { /* List of storage accounts to provision */
             "type": "array"
@@ -116,6 +110,22 @@
         "extensionScript": {
             "type": "string",
             "defaultValue": "setup.sh"
+        },
+        "httpsPort": {
+            "type": "int",
+            "defaultValue": 433
+        },
+        "masterBoltPort": {
+            "type": "int",
+            "defaultValue": 7000
+        },
+        "slaveBoltPort": {
+            "type": "int",
+            "defaultValue": 8000
+        },
+        "httpPort": {
+            "type": "int",
+            "defaultValue": 7474
         }
     },
     "variables": {
@@ -137,7 +147,7 @@
         "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
         "resourceIDs": {
             "loadbalancer": "[variables('LbResourceID')]",
-            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/BackendPool1')]",
+            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jInstancePool')]",
             "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
             "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
@@ -258,7 +268,6 @@
                         "properties": {
                             "privateIPAllocationMethod": "Static",
                             "privateIPAddress": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]",
-                            /* "publicIPAddress": { "id": "[variables('resourceIDs').publicIP]"  }, */
                             "subnet": {
                                 "id": "[concat(variables('resourceIDs').virtualNetwork, '/subnets/', parameters('SubnetName'))]"
                             },
@@ -309,13 +318,65 @@
                     {
                         "name": "default-allow-ssh",
                         "properties": {
-                            "protocol": "Tcp",
+                            "protocol": "TCP",
                             "sourcePortRange": "*",
                             "destinationPortRange": "22",
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
                             "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "http-probe",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('httpPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1010,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow-https",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('httpsPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1020,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "master-bolt",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('masterBoltPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1030,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "slave-bolt",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('slaveBoltPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1040,
                             "direction": "Inbound"
                         }
                     }
@@ -432,14 +493,14 @@
                 ],
                 "backendAddressPools": [
                     {
-                        "name": "BackendPool1"
+                        "name": "Neo4jInstancePool"
                         /* "id": "[variables('resourceIDs').loadbalancerBEP]"*/
                     }
                 ],
                 "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
                 "loadBalancingRules": [
                     {
-                        "name": "LBRule",
+                        "name": "HttpsRule",
                         "properties": {
                             "frontendIPConfiguration": {
                                 "id": "[variables('resourceIDs').loadbalancerFE]"
@@ -447,23 +508,85 @@
                             "backendAddressPool": {
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
-                            "protocol": "Tcp",
-                            "frontendPort": 80,
-                            "backendPort": 80,
+                            "frontendPort": "[parameters('httpsPort')]",
+                            "backendPort": "[parameters('httpsPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "SourceIP",
                             "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/tcpProbe')]"
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "MasterBoltRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('masterBoltPort')]",
+                            "backendPort": "[parameters('masterBoltPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "Default",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/masterProbe')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "SlaveBoltRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('slaveBoltPort')]",
+                            "backendPort": "[parameters('slaveBoltPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "Default",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/slaveProbe')]"
                             }
                         }
                     }
                 ],
                 "probes": [
                     {
-                        "name": "tcpProbe",
+                        "name": "availabilityProbe",
                         "properties": {
-                            "protocol": "Tcp",
-                            "port": 80,
+                            "protocol": "Http",
+                            "port": "[parameters('httpPort')]",
+                            "requestPath": "/db/manage/server/ha/available",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    },
+                    {
+                        "name": "slaveProbe",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": "[parameters('httpPort')]",
+                            "requestPath": "/db/manage/server/ha/slave",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    },
+                    {
+                        "name": "masterProbe",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": "[parameters('httpPort')]",
+                            "requestPath": "/db/manage/server/ha/master",
                             "intervalInSeconds": 5,
                             "numberOfProbes": 2
                         }
@@ -600,7 +723,7 @@
                     ]
                 },
                 "protectedSettings": {
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',variables('neoClusterPort'),'\" DATA_PORT=\"',variables('neoTransactionPort'),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
                 }
             }
         }
