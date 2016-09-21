@@ -55,7 +55,7 @@
     "resources": [
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameter('VmName'),'/SetupScript')]",
+            "name": "[concat(parameters('VmName'),'/SetupScript')]",
             "apiVersion": "2015-05-01-preview",
             "location": "[parameters('Location')]",
             "properties": {
