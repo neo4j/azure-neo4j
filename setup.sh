@@ -6,6 +6,7 @@
 #    HTTP_PORT           the port for HTTP access
 #    HTTPS_PORT          the port for HTTPS access
 #    HTTP_LOGGING        'true' to enable http logging
+#    JOIN_TIMEOUT        how long to (re-)try to join the cluster
 #    MASTER_BOLT_PORT    the port through which the master will accept bolt
 #    SLAVE_BOLT_PORT     the port through which slaves will accept bolt
 #    [COORD_PORT]        port to use for Neo4j HA communication       (HA, optional)
@@ -168,6 +169,10 @@ configure_ha() {
     setting ha.host.data         "$MY_IP:$DATA_PORT"
     setting ha.host.coordination "$MY_IP:$COORD_PORT"
     setting dbms.security.ha_status_auth_enabled false
+
+    if [ -n "$JOIN_TIMEOUT" ]; then
+        setting ha.join_timeout "$JOIN_TIMEOUT"
+    fi
 }
 
 set_neo4j_password() {
