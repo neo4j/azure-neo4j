@@ -5,6 +5,7 @@
 #    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
 #    HTTP_PORT           the port for HTTP access
 #    HTTPS_PORT          the port for HTTPS access
+#    HTTP_LOGGING        'true' to enable http logging
 #    MASTER_BOLT_PORT    the port through which the master will accept bolt
 #    SLAVE_BOLT_PORT     the port through which slaves will accept bolt
 #    [COORD_PORT]        port to use for Neo4j HA communication       (HA, optional)
@@ -123,6 +124,10 @@ configure_neo4j() {
         setting dbms.connector.bolt.enabled true
         setting dbms.connector.bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
     else
+        setting dbms.connector.bolt.type
+        setting dbms.connector.bolt.enabled
+        setting dbms.connector.bolt.address
+
         setting dbms.connector.master_bolt.type    BOLT
         setting dbms.connector.master_bolt.enabled true
         setting dbms.connector.master_bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
@@ -141,6 +146,10 @@ configure_neo4j() {
     setting dbms.connector.http.enabled true
     setting dbms.connector.http.address "0.0.0.0:$HTTP_PORT"
 
+    if [ "true" = "${HTTP_LOGGING}" ]; then
+        setting dbms.logs.http.enabled true
+    fi
+
     if [ "$MY_IP" != "$HOST_IPS" ]; then
         configure_ha
     fi
@@ -158,6 +167,7 @@ configure_ha() {
     setting ha.initial_hosts     "$HOST_PORTS"
     setting ha.host.data         "$MY_IP:$DATA_PORT"
     setting ha.host.coordination "$MY_IP:$COORD_PORT"
+    setting dbms.security.ha_status_auth_enabled false
 }
 
 set_neo4j_password() {

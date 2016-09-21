@@ -48,6 +48,10 @@
         "allIps": {
             "type": "string"
         },
+        "httpLogging": {
+            "type": "string",
+            "defaultValue": "false"
+        },
         "ArtifactsBase": {
             "type": "string",
             "metadata": {
@@ -79,7 +83,7 @@
                     ]
                 },
                 "protectedSettings": {
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Version'),'\" NEO4J_PASSWORD=\"',parameters('Password'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('HeapPercentage'),'\" COORD_PORT=\"',parameters('CoordPort'),'\" DATA_PORT=\"',parameters('DataPort'),'\" MY_ID=\"',parameters('myId'),'\" MY_IP=\"',parameters('myIp'),'\" HOST_IPS=',variables('sq'),parameters('allIps'),variables('sq'),' ./',parameters('script'))]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Version'),'\" NEO4J_PASSWORD=\"',parameters('Password'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" HTTP_LOGGING=\"',parameters('httpLogging'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('HeapPercentage'),'\" COORD_PORT=\"',parameters('CoordPort'),'\" DATA_PORT=\"',parameters('DataPort'),'\" MY_ID=\"',parameters('myId'),'\" MY_IP=\"',parameters('myIp'),'\" HOST_IPS=',variables('sq'),parameters('allIps'),variables('sq'),' ./',parameters('script'))]"
                 }
             }
         }
