@@ -731,31 +731,66 @@
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('namePrefixes').nic,padLeft(copyIndex(),3,'0')))]"
             ]
         },
-        { /* VM Extension to customize those VMs. */
-            "type": "Microsoft.Compute/virtualMachines/extensions",
+        {
+            "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'),'/Config')]",
-            "apiVersion": "2015-05-01-preview",
-            "location": "[parameters('Location')]",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
+            ],
             "copy": {
                 "name": "vmExtLoop",
                 "count": "[parameters('VmCount')]"
             },
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
-            ],
             "properties": {
-                "publisher": "Microsoft.OSTCExtensions",
-                "type": "CustomScriptForLinux",
-                "typeHandlerVersion": "1.5",
-                "autoUpgradeMinorVersion": true,
-                "settings": {
-                    "fileUris": [
-                        "[concat(variables('artifactsBase'), parameters('extensionScript'))]",
-                        "[concat(variables('artifactsBase'), 'setup.sh')]"
-                    ]
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'scriptTemplate.json')]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "protectedSettings": {
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',string(parameters('neoClusterPort')),'\" DATA_PORT=\"',string(parameters('neoTransactionPort')),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
+                "parameters": {
+                    "Location": {
+                        "value": "[parameters('Location')]"
+                    },
+                    "script": {
+                        "value": "[concat(variables('artifactsBase'), parameters('extensionScript'))]"
+                    },
+                    "Version": {
+                        "value": "[parameters('Neo4jVersion')]"
+                    },
+                    "Password": {
+                        "value": "[parameters('Neo4jPassword')]"
+                    },
+                    "httpPort": {
+                        "value": "[parameters('httpPort')]"
+                    },
+                    "httpsPort": {
+                        "value": "[parameters('httpsPort')]"
+                    },
+                    "masterBoltPort": {
+                        "value": "[parameters('masterBoltPort')]"
+                    },
+                    "slaveBoltPort": {
+                        "value": "[parameters('slaveBoltPort')]"
+                    },
+                    "HeapPercentage": {
+                        "value": "[parameters('cacheMemoryPercentage')]"
+                    },
+                    "CoordPort": {
+                        "value": "[string(parameters('neoClusterPort'))]"
+                    },
+                    "DataPort": {
+                        "value": "[string(parameters('neoTransactionPort'))]"
+                    },
+                    "myId": {
+                        "value": "[copyIndex(1)]"
+                    },
+                    "myIp": {
+                        "value": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]"
+                    },
+                    "allIps": {
+                        "value": "[trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']',''))]"
+                    }
                 }
             }
         }

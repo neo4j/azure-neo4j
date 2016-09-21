@@ -1,0 +1,74 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "script": {
+            "type": "string"
+        },
+        "Version": {
+            "type": "string"
+        },
+        "Password": {
+            "type": "securestring"
+        },
+        "httpPort": {
+            "type": "string"
+        },
+        "httpsPort": {
+            "type": "string"
+        },
+        "masterBoltPort": {
+            "type": "string"
+        },
+        "slaveBoltPort": {
+            "type": "string"
+        },
+        "HeapPercentage": {
+            "type": "string"
+        },
+        "CoordPort": {
+            "type": "string"
+        },
+        "DataPort": {
+            "type": "string"
+        },
+        "myId": {
+            "type": "string"
+        },
+        "myIp": {
+            "type": "string"
+        },
+        "allIps": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "sq": "'"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(deployment().name,'-script')]",
+            "apiVersion": "2015-05-01-preview",
+            "location": "[parameters('Location')]",
+            "properties": {
+                "publisher": "Microsoft.OSTCExtensions",
+                "type": "CustomScriptForLinux",
+                "typeHandlerVersion": "1.5",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "[parameters('script')]"
+                    ]
+                },
+                "protectedSettings": {
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Version'),'\" NEO4J_PASSWORD=\"',parameters('Password'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('HeapPercentage'),'\" COORD_PORT=\"',parameters('ClusterPort'),'\" DATA_PORT=\"',parameters('DataPort'),'\" MY_ID=\"',parameters('myId'),'\" MY_IP=\"',parameters('myIp'),'\" HOST_IPS=',variables('sq'),parameters('allIps'),variables('sq'),' ./',parameters('script'))]"
+                }
+            }
+        }
+    ]
+}
