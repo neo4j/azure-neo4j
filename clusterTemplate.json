@@ -749,6 +749,9 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
+                    "VmName": {
+                        "value": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
+                    },
                     "Location": {
                         "value": "[parameters('Location')]"
                     },
