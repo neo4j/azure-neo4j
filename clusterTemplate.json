@@ -755,8 +755,11 @@
                     "Location": {
                         "value": "[parameters('Location')]"
                     },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    },
                     "script": {
-                        "value": "[concat(variables('artifactsBase'), parameters('extensionScript'))]"
+                        "value": "[parameters('extensionScript')]"
                     },
                     "Version": {
                         "value": "[parameters('Neo4jVersion')]"

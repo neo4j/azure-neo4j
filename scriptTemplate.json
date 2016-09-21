@@ -47,9 +47,18 @@
         },
         "allIps": {
             "type": "string"
-        }
+        },
+        "ArtifactsBase": {
+            "type": "string",
+            "metadata": {
+                "artifactsBaseUrl": "", /* do not remove or change this property */
+                "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
+        },
     },
     "variables": {
+        "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
         "sq": "'"
     },
     "resources": [
@@ -65,7 +74,8 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "[parameters('script')]"
+                        "[concat(variables('artifactsBase'), parameters('script'))]",
+                        "[concat(variables('artifactsBase'), 'setup.sh')]"
                     ]
                 },
                 "protectedSettings": {
