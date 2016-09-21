@@ -762,19 +762,19 @@
                         "value": "[parameters('Neo4jPassword')]"
                     },
                     "httpPort": {
-                        "value": "[parameters('httpPort')]"
+                        "value": "[string(parameters('httpPort'))]"
                     },
                     "httpsPort": {
-                        "value": "[parameters('httpsPort')]"
+                        "value": "[string(parameters('httpsPort'))]"
                     },
                     "masterBoltPort": {
-                        "value": "[parameters('masterBoltPort')]"
+                        "value": "[string(parameters('masterBoltPort'))]"
                     },
                     "slaveBoltPort": {
-                        "value": "[parameters('slaveBoltPort')]"
+                        "value": "[string(parameters('slaveBoltPort'))]"
                     },
                     "HeapPercentage": {
-                        "value": "[parameters('cacheMemoryPercentage')]"
+                        "value": "[string(parameters('cacheMemoryPercentage'))]"
                     },
                     "CoordPort": {
                         "value": "[string(parameters('neoClusterPort'))]"
@@ -783,7 +783,7 @@
                         "value": "[string(parameters('neoTransactionPort'))]"
                     },
                     "myId": {
-                        "value": "[copyIndex(1)]"
+                        "value": "[string(copyIndex(1))]"
                     },
                     "myIp": {
                         "value": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]"
