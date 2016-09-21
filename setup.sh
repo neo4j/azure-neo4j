@@ -5,7 +5,8 @@
 #    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
 #    HTTP_PORT           the port for HTTP access
 #    HTTPS_PORT          the port for HTTPS access
-#    BOLT_PORT           the port for BOLT access
+#    MASTER_BOLT_PORT    the port through which the master will accept bolt
+#    SLAVE_BOLT_PORT     the port through which slaves will accept bolt
 #    [COORD_PORT]        port to use for Neo4j HA communication       (HA, optional)
 #    [DATA_PORT]         port to use for Neo4j HA communication       (HA, optional)
 #    MY_ID               identifier of this instance in the cluster   (HA)
@@ -41,9 +42,17 @@ fi
 if [ -z "$HTTPS_PORT" ]; then
     HTTPS_PORT=7473
 fi
-# (Default value for) BOLT_PORT
-if [ -z "$BOLT_PORT" ]; then
-    BOLT_PORT=7687
+# (Default value for) MASTER_BOLT_PORT
+if [ -z "$MASTER_BOLT_PORT" ]; then
+    if [ -z "$SLAVE_BOLT_PORT" ]; then
+        MASTER_BOLT_PORT=7687
+    else
+        MASTER_BOLT_PORT="$SLAVE_BOLT_PORT"
+    fi
+fi
+# (Default value for) SLAVE_BOLT_PORT
+if [ -z "$SLAVE_BOLT_PORT" ]; then
+    SLAVE_BOLT_PORT="$MASTER_BOLT_PORT"
 fi
 
 if [ -z "$MY_IP" ]; then
@@ -109,9 +118,19 @@ configure_neo4j() {
         setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
     fi
 
-    setting dbms.connector.bolt.type    BOLT
-    setting dbms.connector.bolt.enabled true
-    setting dbms.connector.bolt.address "0.0.0.0:$BOLT_PORT"
+    if [ "$MASTER_BOLT_PORT" = "$SLAVE_BOLT_PORT" ]; then
+        setting dbms.connector.bolt.type    BOLT
+        setting dbms.connector.bolt.enabled true
+        setting dbms.connector.bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
+    else
+        setting dbms.connector.master_bolt.type    BOLT
+        setting dbms.connector.master_bolt.enabled true
+        setting dbms.connector.master_bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
+
+        setting dbms.connector.slave_bolt.type    BOLT
+        setting dbms.connector.slave_bolt.enabled true
+        setting dbms.connector.slave_bolt.address "0.0.0.0:$SLAVE_BOLT_PORT"
+    fi
 
     setting dbms.connector.https.type       HTTP
     setting dbms.connector.https.enabled    true
@@ -121,10 +140,6 @@ configure_neo4j() {
     setting dbms.connector.http.type    HTTP
     setting dbms.connector.http.enabled true
     setting dbms.connector.http.address "0.0.0.0:$HTTP_PORT"
-
-    if [ "true" = "${HTTP_LOGGING}" ]; then
-        setting dbms.logs.http.enabled true
-    fi
 
     if [ "$MY_IP" != "$HOST_IPS" ]; then
         configure_ha
@@ -143,7 +158,6 @@ configure_ha() {
     setting ha.initial_hosts     "$HOST_PORTS"
     setting ha.host.data         "$MY_IP:$DATA_PORT"
     setting ha.host.coordination "$MY_IP:$COORD_PORT"
-    setting dbms.security.ha_status_auth_enabled false
 }
 
 set_neo4j_password() {

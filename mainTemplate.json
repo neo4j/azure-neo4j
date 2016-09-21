@@ -132,13 +132,6 @@
                 "description": "The port to use for (public) BOLT access to the secondary instances."
             }
         },
-        "backendBoltPort": {
-            "type": "int",
-            "defaultValue": 7687,
-            "metadata": {
-                "description": "The port to use for (public) BOLT access to any instance."
-            }
-        },
         "httpPort": {
             "type": "int",
             "defaultValue": 7474,
@@ -276,9 +269,6 @@
                     },
                     "slaveBoltPort": {
                         "value": "[parameters('slaveBoltPort')]"
-                    },
-                    "backendBoltPort": {
-                        "value": "[parameters('backendBoltPort')]"
                     },
                     "httpPort": {
                         "value": "[parameters('httpPort')]"

@@ -123,10 +123,6 @@
             "type": "int",
             "defaultValue": 433
         },
-        "backendBoltPort": {
-            "type": "int",
-            "defaultValue": 7687
-        },
         "masterBoltPort": {
             "type": "int",
             "defaultValue": 7000
@@ -159,9 +155,7 @@
         "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
         "resourceIDs": {
             "loadbalancer": "[variables('LbResourceID')]",
-            "slavesPool": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jSlavesPool')]",
-            "masterPool": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jMasterPool')]",
-            "instancePool": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jInstancePool')]",
+            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jInstancePool')]",
             "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
             "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
@@ -285,13 +279,7 @@
                             },
                             "loadBalancerBackendAddressPools": [
                                 {
-                                    "id": "[variables('resourceIDs').instancePool]"
-                                },
-                                {
-                                    "id": "[variables('resourceIDs').masterPool]"
-                                },
-                                {
-                                    "id": "[variables('resourceIDs').slavesPool]"
+                                    "id": "[variables('resourceIDs').loadbalancerBEP]"
                                 }
                             ],
                             "loadBalancerInboundNatRules": [
@@ -373,15 +361,28 @@
                         }
                     },
                     {
-                        "name": "allow-bolt",
+                        "name": "master-bolt",
                         "properties": {
                             "protocol": "TCP",
                             "sourcePortRange": "*",
-                            "destinationPortRange": "[string(parameters('backendBoltPort'))]",
+                            "destinationPortRange": "[string(parameters('masterBoltPort'))]",
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
                             "priority": 1030,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "slave-bolt",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('slaveBoltPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1040,
                             "direction": "Inbound"
                         }
                     },
@@ -525,15 +526,7 @@
                 "backendAddressPools": [
                     {
                         "name": "Neo4jInstancePool"
-                        /* "id": "[variables('resourceIDs').instancePool]"*/
-                    },
-                    {
-                        "name": "Neo4jMasterPool"
-                        /* "id": "[variables('resourceIDs').masterPool]"*/
-                    },
-                    {
-                        "name": "Neo4jSlavesPool"
-                        /* "id": "[variables('resourceIDs').slavesPool]"*/
+                        /* "id": "[variables('resourceIDs').loadbalancerBEP]"*/
                     }
                 ],
                 "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
@@ -545,7 +538,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerFE]"
                             },
                             "backendAddressPool": {
-                                "id": "[variables('resourceIDs').instancePool]"
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('httpsPort')]",
                             "backendPort": "[parameters('httpsPort')]",
@@ -559,36 +552,16 @@
                         }
                     },
                     {
-                        "name": "AnyoneBoltRule",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[variables('resourceIDs').loadbalancerFE]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[variables('resourceIDs').instancePool]"
-                            },
-                            "frontendPort": "[parameters('backendBoltPort')]",
-                            "backendPort": "[parameters('backendBoltPort')]",
-                            "enableFloatingIP": false,
-                            "idleTimeoutInMinutes": 5,
-                            "protocol": "Tcp",
-                            "loadDistribution": "Default",
-                            "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
-                            }
-                        }
-                    },
-                    {
                         "name": "MasterBoltRule",
                         "properties": {
                             "frontendIPConfiguration": {
                                 "id": "[variables('resourceIDs').loadbalancerFE]"
                             },
                             "backendAddressPool": {
-                                "id": "[variables('resourceIDs').masterPool]"
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('masterBoltPort')]",
-                            "backendPort": "[parameters('backendBoltPort')]",
+                            "backendPort": "[parameters('masterBoltPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -605,10 +578,10 @@
                                 "id": "[variables('resourceIDs').loadbalancerFE]"
                             },
                             "backendAddressPool": {
-                                "id": "[variables('resourceIDs').slavesPool]"
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('slaveBoltPort')]",
-                            "backendPort": "[parameters('backendBoltPort')]",
+                            "backendPort": "[parameters('slaveBoltPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -782,7 +755,7 @@
                     ]
                 },
                 "protectedSettings": {
-                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" BOLT_PORT=\"',parameters('backendBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',string(parameters('neoClusterPort')),'\" DATA_PORT=\"',string(parameters('neoTransactionPort')),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
+                    "commandToExecute": "[concat('/usr/bin/env NEO4J_VERSION=\"',parameters('Neo4jVersion'),'\" NEO4J_PASSWORD=\"',parameters('Neo4jPassword'),'\" HTTP_PORT=\"',parameters('httpPort'),'\" HTTPS_PORT=\"',parameters('httpsPort'),'\" MASTER_BOLT_PORT=\"',parameters('masterBoltPort'),'\" SLAVE_BOLT_PORT=\"',parameters('slaveBoltPort'),'\" HEAP_PERCENTAGE=\"',parameters('cacheMemoryPercentage'),'\" COORD_PORT=\"',string(parameters('neoClusterPort')),'\" DATA_PORT=\"',string(parameters('neoTransactionPort')),'\" MY_ID=\"',copyIndex(1),'\" MY_IP=\"',reference('IPListConstructor').outputs.IPList.value[copyIndex()],'\" HOST_IPS=',variables('sq'),trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']','')),variables('sq'),' ./',parameters('extensionScript'))]"
                 }
             }
         }
