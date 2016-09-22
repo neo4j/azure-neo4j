@@ -239,7 +239,7 @@
                         "value": "[parameters('PublicIPNewOrExisting')]"
                     },
                     "PublicIPName": {
-                        "value": "[parameters('publicIPAddressName')]"
+                        "value": "[parameters('PublicIPName')]"
                     },
                     "PublicIPAllocationMethod": {
                         "value": "[parameters('PublicIPAllocationMethod')]"
