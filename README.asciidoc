@@ -1,1 +1,3 @@
 If this ends up being useful, I'll write a proper README.
+
+[createUiDefinition](https://portal.azure.com/#blade/Microsoft_Azure_Compute/CreateMultiVmWizardBlade/internal_bladeCallId/anything/internal_bladeCallerParams/{"initialData":{},"providerConfig":{"createUiDefinition":"https%3A%2F%2Fgithub.com%2Fthobe%2Fcarcassour%2Fraw%2Fmaster%2FcreateUiDefinition.json"}})

@@ -44,14 +44,19 @@ fi
 
 PARAMETERS=$(cat<<JSON
 {
-    "AdminUserName": {
-        "value": "$USERNAME"
-    },
     "ClusterNamePrefix": {
         "value": "$CLUSTERNAME_PREFIX"
     },
-    "Neo4jPassword": {
-        "value": "$NEO4J_PASSWORD"
+
+    "VmCount": {
+        "value": $INSTANCES
+    },
+    "VmSize": {
+        "value": "Standard_A1"
+    },
+
+    "AdminUserName": {
+        "value": "$USERNAME"
     },
     "AuthBySSH": {
         "value": true
@@ -59,12 +64,7 @@ PARAMETERS=$(cat<<JSON
     "AuthCredential": {
         "value": "$PUBKEY"
     },
-    "VmCount": {
-        "value": $INSTANCES
-    },
-    "VmSize": {
-        "value": "Standard_A1"
-    },
+
     "VnetNewOrExisting": {
         "value": "new"
     },
@@ -83,6 +83,7 @@ PARAMETERS=$(cat<<JSON
     "SubnetStartAddress": {
         "value": "10.0.1.0"
     },
+
     "publicIPAddressName": {
         "value": "NeoA001"
     },
@@ -95,9 +96,14 @@ PARAMETERS=$(cat<<JSON
     "publicIPIdleTimeoutInMinutes": {
         "value": 10
     },
+
+    "Neo4jPassword": {
+        "value": "$NEO4J_PASSWORD"
+    },
     "cacheMemoryPercentage": {
         "value": 42
     },
+
     "ArtifactsBase": {
         "value": "https://raw.githubusercontent.com/thobe/carcassour/master"
     }$EXTENSION

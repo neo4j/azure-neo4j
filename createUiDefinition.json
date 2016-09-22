@@ -3,7 +3,6 @@
     "version": "0.0.1-preview",
     "parameters": {
         "basics": [
-
             {
                 "name": "adminUsername",
                 "type": "Microsoft.Compute.UserNameTextBox",
@@ -62,6 +61,18 @@
                                     "value": "3.0.4"
                                 }
                             ]
+                        }
+                    },
+                    {
+                        "name": "Neo4jPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": {
+                            "password": "Neo4j password",
+                            "confirmPassword": "Confirm Neo4j password"
+                        },
+                        "toolTip": "The password used to authenticate with the 'Neo4j' user.",
+                        "constraints": {
+                            "required": true
                         }
                     },
                     {
@@ -186,26 +197,19 @@
                         "name": "PublicIP",
                         "type": "Microsoft.Network.PublicIpAddressCombo",
                         "label": {
-                            "publicIpAddress": "Public IP address",
-                            "domainNameLabel": "Domain name label"
-                        },
-                        "toolTip": {
-                            "publicIpAddress": "",
-                            "domainNameLabel": ""
+                            "publicIpAddress": "Public IP address"
                         },
                         "defaultValue": {
-                            "publicIpAddressName": "ip01",
-                            "domainNameLabel": "foobar"
+                            "publicIpAddressName": "NeoIP001"
                         },
                         "constraints": {
                             "required": {
-                                "domainNameLabel": true
+                                "domainNameLabel": false
                             }
                         },
                         "options": {
-                            "hideNone": false,
-                            "hideDomainNameLabel": false,
-                            "hideExisting": false
+                            "hideNone": true,
+                            "hideDomainNameLabel": true
                         },
                         "visible": true
                     }
@@ -213,16 +217,29 @@
             }
         ],
         "outputs": {
+            "Location": "[location()]",
             "ClusterNamePrefix": "[steps('neo4jConfig').ClusterName]",
-            "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
+
             "VmCount": "[steps('neo4jConfig').VmCount]",
             "VmSize": "[steps('neo4jConfig').VmSize]",
-            "VnetName": "[steps('neo4jConfig').Vnet]",
-            "VnetIsNew": "[equals(steps('neo4jConfig').Vnet.newOrExisting, 'new')]",
+
             "AdminUserName": "[basics('adminUsername')]",
             "AuthBySSH": "[equals(basics('adminCredentials').authenticationType,'sshPublicKey')]",
             "AuthCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
-            "Location": "[location()]"
+
+            "VnetNewOrExisting": "[steps('neo4jConfig').Vnet.newOrExisting]",
+            "NetworkName": "[steps('neo4jConfig').Vnet.name]",
+            "NetworkAddressPrefix": "[steps('neo4jConfig').Vnet.addressPrefix]",
+            "SubnetName": "[steps('neo4jConfig').Vnet.subnets.subnet1.name]",
+            "SubnetAddressPrefix": "[steps('neo4jConfig').Vnet.subnets.subnet1.addressPrefix]",
+            "SubnetStartAddress": "[steps('neo4jConfig').Vnet.subnets.subnet1.startAddress]",
+
+            "publicIPAddressExists": "[steps('neo4jConfig').PublicIP.newOrExistingOrNone]",
+            "publicIPAddressName": "[steps('neo4jConfig').PublicIP.name]",
+
+            "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
+            "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
+            "cacheMemoryPercentage": ""
         }
     }
 }
