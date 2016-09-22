@@ -1,6 +1,6 @@
 #!/bin/bash
 # Environment parameters:
-#    HEAP_PERCENTAGE     fraction of RAM used by the JVM heap
+#    HEAP_SIZE           fraction of RAM used by the JVM heap
 #    NEO4J_PASSWORD      password
 #    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
 #    HTTP_PORT           the port for HTTP access
@@ -15,17 +15,54 @@
 #    MY_IP               ip address of this instance                  (HA)
 #    HOST_IPS            ip addresses of all instances in the cluster (HA)
 
-# Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from HEAP_PERCENTAGE
+# Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from HEAP_SIZE and RAM_MEMORY - all *_MEMORY variables are in kiB
 RAM_MEMORY=$(cat /proc/meminfo | grep ^MemTotal | sed -e 's/: */ /g' | cut -d\  -f2)
 RAM_MEMORY=$(expr $RAM_MEMORY - 2097152)
-if [ -n "$HEAP_PERCENTAGE" -a "$HEAP_PERCENTAGE" -gt 0 -a "$HEAP_PERCENTAGE" -lt 100 ]; then
-    # Memory percentage given
-    HEAP_MEMORY=$(expr $RAM_MEMORY \* $HEAP_PERCENTAGE / 100)
-else
-    # Memory percentage not specified (or invalid) - used 2/5 of RAM
+case "${HEAP_SIZE: -1}" in
+    g|G)
+        HEAP_SIZE="${HEAP_SIZE%?}"
+        if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
+            HEAP_MEMORY=$(expr "$HEAP_SIZE" \* 1024 \* 1024)
+        else
+            HEAP_MEMORY=""
+        fi
+    ;;
+    m|M)
+        HEAP_SIZE="${HEAP_SIZE%?}"
+        if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
+            HEAP_MEMORY=$(expr "$HEAP_SIZE" \* 1024)
+        else
+            HEAP_MEMORY=""
+        fi
+    ;;
+    k|K)
+        HEAP_SIZE="${HEAP_SIZE%?}"
+        if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
+            HEAP_MEMORY="$HEAP_SIZE"
+        else
+            HEAP_MEMORY=""
+        fi
+    ;;
+    \%)
+        HEAP_SIZE="${HEAP_SIZE%?}"
+        if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 -a "$HEAP_SIZE" -lt 100 ]; then
+            # Memory percentage given
+            HEAP_MEMORY=$(expr $RAM_MEMORY \* $HEAP_SIZE / 100)
+        else
+            HEAP_MEMORY=""
+        fi
+    ;;
+    *)
+        HEAP_MEMORY=""
+    ;;
+esac
+if [ -z "$HEAP_MEMORY" ]; then
+    # Memory size not specified (or invalid) - used 2/5 of RAM
     HEAP_MEMORY=$(expr $RAM_MEMORY \* 2 / 5)
 fi
 PAGE_MEMORY=$(expr $RAM_MEMORY - $HEAP_MEMORY)
+echo HEAP_MEMORY=${HEAP_MEMORY}k
+echo PAGE_MEMORY=${PAGE_MEMORY}k
 
 # (Default value for) COORD_PORT
 if [ -z "$COORD_PORT" ]; then

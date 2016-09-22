@@ -19,6 +19,9 @@ if [ -z "$NEO4J_PASSWORD" ]; then
     read -p "Neo4j Password: " -s NEO4J_PASSWORD
     echo
 fi
+if [ -z "$HEAP_SIZE" ]; then
+    HEAP_SIZE="42%"
+fi
 
 if [ -z "$PUBKEY" ]; then
     PUBKEY=$(cat ~/.ssh/id_rsa.pub)
@@ -58,20 +61,20 @@ PARAMETERS=$(cat<<JSON
     "AdminUserName": {
         "value": "$USERNAME"
     },
-    "AuthBySSH": {
-        "value": true
+    "AdminAuthType": {
+        "value": "ssh"
     },
-    "AuthCredential": {
+    "AdminCredential": {
         "value": "$PUBKEY"
     },
 
-    "VnetNewOrExisting": {
+    "VNetNewOrExisting": {
         "value": "new"
     },
-    "NetworkName": {
+    "VNNetName": {
         "value": "neoVnet"
     },
-    "NetworkAddressPrefix": {
+    "VNetAddressPrefix": {
         "value": "10.0.0.0/16"
     },
     "SubnetName": {
@@ -84,24 +87,24 @@ PARAMETERS=$(cat<<JSON
         "value": "10.0.1.0"
     },
 
-    "publicIPAddressName": {
-        "value": "NeoA001"
-    },
-    "publicIPAddressExists": {
+    "PublicIPNewOrExisting": {
         "value": "new"
     },
-    "publicIPAllocationMethod": {
+    "PublicIPName": {
+        "value": "NeoA001"
+    },
+    "PublicIPAllocationMethod": {
         "value": "Dynamic"
     },
-    "publicIPIdleTimeoutInMinutes": {
+    "PublicIPIdleTimeoutInMinutes": {
         "value": 10
     },
 
     "Neo4jPassword": {
         "value": "$NEO4J_PASSWORD"
     },
-    "cacheMemoryPercentage": {
-        "value": 42
+    "Neo4jHeapSize": {
+        "value": "$HEAP_SIZE"
     },
 
     "ArtifactsBase": {

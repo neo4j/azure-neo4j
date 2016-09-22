@@ -92,7 +92,7 @@
                         "name": "VmCount",
                         "type": "Microsoft.Common.TextBox",
                         "label": "Number of VMs",
-                        "defaultValue": "2",
+                        "defaultValue": "3",
                         "toolTip": "Number of VMs in the Neo4j cluster",
                         "constraints": {
                             "required": true,
@@ -144,11 +144,11 @@
                         "visible": true
                     },
                     {
-                        "name": "QueryGB",
+                        "name": "HeapGB",
                         "type": "Microsoft.Common.TextBox",
                         "label": "GB of memory to reserve for Query space",
                         "defaultValue": "5.5",
-                        "toolTip": "Portion of VM memory set aside for query processing (1 to 12GB in 0.5GB increments)",
+                        "toolTip": "Portion of VM memory set aside for query processing, aka heap (1 to 12GB in 0.5GB increments)",
                         "constraints": {
                             "required": true,
                             "regex": "^(1|1.5|2|2.5|3|3.5|4|4.5|5|5.5|6|6.5|7|7.5|8|8.5|9|9.5|10|10.5|11|11.5|12)$",
@@ -157,7 +157,7 @@
                         "visible": true
                     },
                     {
-                        "name": "Vnet",
+                        "name": "VNet",
                         "type": "Microsoft.Network.VirtualNetworkCombo",
                         "label": {
                             "virtualNetwork": "Virtual network for the Cluster",
@@ -178,7 +178,7 @@
                             "hideExisting": false
                         },
                         "subnets": {
-                            "subnet1": {
+                            "cluster": {
                                 "label": "Subnet for Cluster VMs",
                                 "defaultValue": {
                                     "name": "clusterSubnet",
@@ -220,26 +220,26 @@
             "Location": "[location()]",
             "ClusterNamePrefix": "[steps('neo4jConfig').ClusterName]",
 
-            "VmCount": "[steps('neo4jConfig').VmCount]",
+            "VmCount": "[int(steps('neo4jConfig').VmCount)]",
             "VmSize": "[steps('neo4jConfig').VmSize]",
 
             "AdminUserName": "[basics('adminUsername')]",
-            "AuthBySSH": "[equals(basics('adminCredentials').authenticationType,'sshPublicKey')]",
-            "AuthCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
+            "AdminAuthType": "[toLower(basics('adminCredentials').authenticationType)]",
+            "AdminCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
 
-            "VnetNewOrExisting": "[steps('neo4jConfig').Vnet.newOrExisting]",
-            "NetworkName": "[steps('neo4jConfig').Vnet.name]",
-            "NetworkAddressPrefix": "[steps('neo4jConfig').Vnet.addressPrefix]",
-            "SubnetName": "[steps('neo4jConfig').Vnet.subnets.subnet1.name]",
-            "SubnetAddressPrefix": "[steps('neo4jConfig').Vnet.subnets.subnet1.addressPrefix]",
-            "SubnetStartAddress": "[steps('neo4jConfig').Vnet.subnets.subnet1.startAddress]",
+            "VNetNewOrExisting": "[toLower(steps('neo4jConfig').VNet.newOrExisting)]",
+            "VNetName": "[steps('neo4jConfig').VNet.name]",
+            "VNetAddressPrefix": "[steps('neo4jConfig').VNet.addressPrefix]",
+            "VNetSubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
+            "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
+            "SubnetStartAddress": "[steps('neo4jConfig').VNet.subnets.cluster.startAddress]",
 
-            "publicIPAddressExists": "[steps('neo4jConfig').PublicIP.newOrExistingOrNone]",
-            "publicIPAddressName": "[steps('neo4jConfig').PublicIP.name]",
+            "PublicIPNewOrExisting": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
+            "PublicIPName": "[steps('neo4jConfig').PublicIP.name]",
 
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
-            "cacheMemoryPercentage": ""
+            "Neo4jHeapSize": "[concat(string(int(mul(float(steps('neo4jConfig').HeapGB),1024))),'M')]"
         }
     }
 }
