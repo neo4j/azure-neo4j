@@ -33,7 +33,7 @@
         },
         "AdminAuthType": {
             "type": "string",
-            "allowedValues": ["ssh", "password"]
+            "allowedValues": ["sshpublickey", "password"]
         },
         "AdminCredential": {
             "type": "securestring",
@@ -209,7 +209,7 @@
                     "AdminUserName": {
                         "value": "[parameters('AdminUserName')]"
                     },
-                    "AuthBySSH": {
+                    "AdminAuthType": {
                         "value": "[parameters('AdminAuthType')]"
                     },
                     "AuthCredential": {

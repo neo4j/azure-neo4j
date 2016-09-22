@@ -30,7 +30,7 @@
         },
         "AdminAuthType": {
             "type": "string",
-            "allowedValues": ["ssh", "password"]
+            "allowedValues": ["sshpublickey", "password"]
         },
         "AdminCredential": {
             "type": "securestring",
@@ -179,7 +179,7 @@
             "version": "latest"
         },
         "imageReference": "[variables('imageReferenceTest')]",
-        "authConfig-ssh": {
+        "authConfig-sshpublickey": {
             "linuxConfiguration": {
                 "disablePasswordAuthentication": true,
                 "ssh": {

@@ -230,7 +230,7 @@
             "VNetNewOrExisting": "[toLower(steps('neo4jConfig').VNet.newOrExisting)]",
             "VNetName": "[steps('neo4jConfig').VNet.name]",
             "VNetAddressPrefix": "[steps('neo4jConfig').VNet.addressPrefix]",
-            "VNetSubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
+            "SubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
             "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
             "SubnetStartAddress": "[steps('neo4jConfig').VNet.subnets.cluster.startAddress]",
 
