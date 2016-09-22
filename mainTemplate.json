@@ -164,7 +164,7 @@
                         "value": "[parameters('VmCount')]"
                     },
                     "vhdsPerVM": {
-                        "value": 2 /* OS drive + 1 data drive */
+                        "value": 2
                     },
                     "sequentialPadWidth": {
                         "value": "[variables('saSuffixDigits')]"
