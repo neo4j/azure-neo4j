@@ -37,12 +37,12 @@
         "steps": [
             {
                 "name": "neo4jConfig",
-                "label": "Neo4J Settings",
+                "label": "Neo4j Settings",
                 "subLabel": {
                     "preValidation": "Configure VMs",
                     "postValidation": "Done"
                 },
-                "bladeTitle": "Neo4J Settings",
+                "bladeTitle": "Neo4j Settings",
                 "elements": [
                     {
                         "name": "Neo4jVersion",
@@ -80,7 +80,7 @@
                         "type": "Microsoft.Common.TextBox",
                         "label": "Neo Cluster Name",
                         "defaultValue": "neo",
-                        "toolTip": "The name for your Neo4J cluster.  Used for VM and other name prefixes.",
+                        "toolTip": "The name for your Neo4j cluster.  Used for VM and other name prefixes.",
                         "constraints": {
                             "required": true,
                             "regex": "^[a-zA-Z0-9\\.\\-]{1,30}$",

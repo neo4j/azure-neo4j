@@ -145,7 +145,7 @@
         "saSuffixDigits": 2,
         "SingleInstance-1": {"file":"clusterTemplate.json", "prefix":"Instance"},
         "SingleInstance-0": {"file":"clusterTemplate.json", "prefix":"Cluster"},
-        "template": "[variables( concat( 'SingleInstance-', string( sub(1,mod(1,parameters('VmCount'))) ) )]"
+        "template": "[variables( concat( 'SingleInstance-', string( sub(1,mod(1,parameters('VmCount'))) ) ) )]"
     },
     "resources": [
         {
