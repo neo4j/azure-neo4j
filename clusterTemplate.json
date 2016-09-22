@@ -199,7 +199,7 @@
             },
             "adminPassword": "[parameters('AdminCredential')]"
         },
-        "authConfig": "variables(concat('authConfig-',parameters('AdminAuthType')))"
+        "authConfig": "[variables(concat('authConfig-',parameters('AdminAuthType')))]"
     },
     "resources": [
         /*********************************************************************
@@ -717,9 +717,9 @@
                 "osProfile": {
                     "computerName": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'))]",
                     "adminUsername": "[parameters('AdminUserName')]",
-                    "linuxConfiguration": "[variables('authConfig')].linuxConfiguration",
+                    "linuxConfiguration": "[variables('authConfig').linuxConfiguration]",
                     "secrets": [],
-                    "adminPassword": "[variables('authConfig')].adminPassword"
+                    "adminPassword": "[variables('authConfig').adminPassword]"
                 },
                 "networkProfile": {
                     "networkInterfaces": [
