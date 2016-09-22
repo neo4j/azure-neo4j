@@ -212,7 +212,7 @@
                     "AdminAuthType": {
                         "value": "[parameters('AdminAuthType')]"
                     },
-                    "AuthCredential": {
+                    "AdminCredential": {
                         "value": "[parameters('AdminCredential')]"
                     },
 
