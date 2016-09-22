@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ -z "$RESOURCE_GROUP" ]; then
+    RESOURCE_GROUP=Neo4j
+fi
+if [ -z "$DEPLOYMENT" ]; then
+    DEPLOYMENT="$(TZ=0 date +'Neo4j-HA-%Y%m%dT%H%M%SZ')"
+fi
+if [ -z "$LOCATION" ]; then
+    LOCATION="East US"
+fi
+
+PARAMETERS=$(cat)
+
+#echo "$PARAMETERS"
+#exit
+
+if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
+    if ! azure group create -n "$RESOURCE_GROUP" -l "$LOCATION"; then
+        exit $?
+    fi
+fi
+
+azure group deployment create\
+    --template-uri "https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json" \
+    -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
+exit $?

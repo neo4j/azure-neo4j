@@ -1,14 +1,5 @@
 #!/bin/bash
 
-if [ -z "$RESOURCE_GROUP" ]; then
-    RESOURCE_GROUP=Neo4j
-fi
-if [ -z "$DEPLOYMENT" ]; then
-    DEPLOYMENT="$(TZ=0 date +'Neo4j-HA-%Y%m%dT%H%M%SZ')"
-fi
-if [ -z "$LOCATION" ]; then
-    LOCATION="East US"
-fi
 if [ -z "$CLUSTERNAME_PREFIX" ]; then
     CLUSTERNAME_PREFIX="neo$(cat /dev/urandom | env LC_CTYPE=C tr -cd 'a-z0-9A-Z' | head -c 8)"
 fi
@@ -45,7 +36,7 @@ EXTENSION_JSON
     fi
 fi
 
-PARAMETERS=$(cat<<JSON
+$(dirname $0)/deploy <<JSON
 {
     "ClusterNamePrefix": {
         "value": "$CLUSTERNAME_PREFIX"
@@ -112,28 +103,5 @@ PARAMETERS=$(cat<<JSON
     }$EXTENSION
 }
 JSON
-)
 
-#echo "$PARAMETERS"
-#exit
-
-__CREATED=""
-if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
-    if ! azure group create -n "$RESOURCE_GROUP" -l "$LOCATION"; then
-        exit $?
-    fi
-    __CREATED=yes
-fi
-
-azure group deployment create\
-    --template-uri "https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json" \
-    -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
-CODE=$?
-
-#if [ $CODE -ne 0 -a -n "$__CREATED" ]; then
-#    azure group delete -q "$RESOURCE_GROUP"
-#fi
-
-#azure group deployment create -f mainTemplate.json -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
-
-exit $CODE
+exit $?
