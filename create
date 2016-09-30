@@ -53,7 +53,7 @@ $(dirname $0)/deploy <<JSON
         "value": "$USERNAME"
     },
     "AdminAuthType": {
-        "value": "ssh"
+        "value": "sshpublickey"
     },
     "AdminCredential": {
         "value": "$PUBKEY"
@@ -62,7 +62,7 @@ $(dirname $0)/deploy <<JSON
     "VNetNewOrExisting": {
         "value": "new"
     },
-    "VNNetName": {
+    "VNetName": {
         "value": "neoVnet"
     },
     "VNetAddressPrefix": {
