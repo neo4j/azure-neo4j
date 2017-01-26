@@ -17,6 +17,7 @@
 
 # Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from HEAP_SIZE and RAM_MEMORY - all *_MEMORY variables are in kiB
 RAM_MEMORY=$(cat /proc/meminfo | grep ^MemTotal | sed -e 's/: */ /g' | cut -d\  -f2)
+# Reserve 2G for OS
 RAM_MEMORY=$(expr $RAM_MEMORY - 2097152)
 case "${HEAP_SIZE: -1}" in
     g|G)
@@ -60,7 +61,9 @@ if [ -z "$HEAP_MEMORY" ]; then
     # Memory size not specified (or invalid) - used 2/5 of RAM
     HEAP_MEMORY=$(expr $RAM_MEMORY \* 2 / 5)
 fi
-PAGE_MEMORY=$(expr $RAM_MEMORY - $HEAP_MEMORY)
+# Must leave some memory for Lucene. And memory has a tendency to consume more actual RAM.
+# TODO This calculation should be more precise
+PAGE_MEMORY=$(expr $RAM_MEMORY - 3 / 2 \* $HEAP_MEMORY)
 echo HEAP_MEMORY=${HEAP_MEMORY}k
 echo PAGE_MEMORY=${PAGE_MEMORY}k
 
