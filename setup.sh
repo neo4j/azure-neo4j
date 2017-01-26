@@ -155,8 +155,8 @@ configure_neo4j() {
     # uses: PAGE_MEMORY, HEAP_MEMORY, MY_ID, MY_IP, HOST_IPS, DATA_PORT, COORD_PORT
 
     if [  "$RAM_MEMORY" -gt 0 ]; then
-        setting dbms.memory.heap.initial_size "$(expr $HEAP_MEMORY / 1024)" neo4j-wrapper.conf
-        setting dbms.memory.heap.max_size "$(expr $HEAP_MEMORY / 1024)" neo4j-wrapper.conf
+        setting dbms.memory.heap.initial_size "$(expr $HEAP_MEMORY / 1024)" neo4j.conf
+        setting dbms.memory.heap.max_size "$(expr $HEAP_MEMORY / 1024)" neo4j.conf
         setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
     fi
 
