@@ -1,0 +1,812 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "ResourceGroupName": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]"
+        },
+        "ClusterNamePrefix": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 11
+        },
+
+        "VmCount": {
+            "type": "int",
+            "minValue": 1,
+            "defaultValue": 1
+        },
+        "VmSize": {
+            "type": "string"
+        },
+
+        "AdminUserName": {
+            "type": "securestring"
+        },
+        "AdminAuthType": {
+            "type": "string",
+            "allowedValues": ["sshpublickey", "password"]
+        },
+        "AdminCredential": {
+            "type": "securestring",
+            "defaultValue": null
+        },
+
+        "VNetNewOrExisting": {
+            "type": "string",
+            "allowedValues": [
+                "new",
+                "existing"
+            ]
+        },
+        "VNetName": {
+            "type": "string"
+        },
+        "VNetAddressPrefix": {
+            "type": "string"
+        },
+        "SubnetName": {
+            "type": "string"
+        },
+        "SubnetAddressPrefix": {
+            "type": "string"
+        },
+        "SubnetStartAddress": {
+            "type": "string"
+        },
+
+        "PublicIPNewOrExisting": {
+            "type": "string",
+            "allowedValues": ["new","existing"]
+        },
+        "PublicIPName": {
+            "type": "string"
+        },
+        "PublicIPAllocationMethod": {
+            "type": "string",
+            "allowedValues": ["Static", "Dynamic"]
+        },
+        "PublicIPIdleTimeoutInMinutes": {
+            "type": "int",
+            "minValue": 4,
+            "maxValue": 30
+        },
+
+        "Neo4jVersion": {
+            "type": "string"
+        },
+        "Neo4jPassword": {
+            "type": "securestring"
+        },
+        "Neo4jHeapSize": {
+            "type": "string"
+        },
+        "Neo4jMasterBoltPort": {
+            "type": "int"
+        },
+        "Neo4jSlaveBoltPort": {
+            "type": "int"
+        },
+        "Neo4jHttpsPort": {
+            "type": "int"
+        },
+        "Neo4jHttpPort": {
+            "type": "int"
+        },
+        "Neo4jClusterPort": {
+            "type": "int",
+            "defaultValue": 5300,
+            "metadata": {
+                "description": "The port used for communication between instances in the cluster"
+            }
+        },
+        "Neo4jTransactionPort": {
+            "type": "int",
+            "defaultValue": 5400,
+            "metadata": {
+                "description": "The port used to read transaction data from the master"
+            }
+        },
+
+        "saList": {
+            "type": "array",
+            "metadata": {
+                "description": "List of storage accounts to provision"
+            }
+        },
+        "saListByVM": {
+            "type": "array",
+            "metadata": {
+                "description": "List of storage account to use, indexed by ordinal VM number"
+            }
+        },
+
+        "ArtifactsBase": {
+            "type": "string",
+            "metadata": {
+                "artifactsBaseUrl": "", /* do not remove or change this property */
+                "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
+            },
+            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
+        },
+        "extensionScript": {
+            "type": "string",
+            "defaultValue": "setup.sh"
+        },
+    },
+    "variables": {
+        "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
+        "namePrefixes": { /* used to create names for the different resource types */
+            "nic": "[concat(parameters('ClusterNamePrefix'),'-nic-')]",
+            "nsg": "[concat(parameters('ClusterNamePrefix'),'-sg')]",
+            "storage": "[concat(toLower(trim(parameters('ClusterNamePrefix'))), uniqueString(resourceGroup().id))]", /*unique storage account name based on RG ID */
+            "vm": "[concat(parameters('ClusterNamePrefix'),'-vm-')]",
+            "publicip": "[concat(parameters('ClusterNamePrefix'),'-pip')]",
+            "loadBalancer": "[concat(parameters('ClusterNamePrefix'),'-lb')]",
+            "availabilitySet": "[concat(parameters('ClusterNamePrefix'), '-as')]"
+        },
+        "apiVersions": { /* Centralize resource API versions */
+            "storage": "2016-01-01",
+            "compute": "2015-06-15",
+            "network": "2016-07-01"
+        },
+        "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
+        "resourceIDs": {
+            "loadbalancer": "[variables('LbResourceID')]",
+            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jInstancePool')]",
+            "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
+            "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
+            "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
+            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
+        },
+        "natRulePrefix": "SSH-",
+        "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VNetNewOrExisting'), '.json')]",
+        "imageReferenceTest": { /* TODO: update this when image is published */
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "16.04.0-LTS",
+            "version": "latest"
+        },
+        "imageReferenceMarketPlace": {
+            "publisher": "MicrosoftWindowsServerEssentials",
+            "offer": "WindowsServerEssentials",
+            "sku": "WindowsServerEssentials",
+            "version": "latest"
+        },
+        "imageReference": "[variables('imageReferenceTest')]",
+        "authConfig-sshpublickey": {
+            "linuxConfiguration": {
+                "disablePasswordAuthentication": true,
+                "ssh": {
+                    "publicKeys": [
+                        {
+                            "path": "[concat('/home/', parameters('AdminUserName'),'/.ssh/authorized_keys')]",
+                            "keyData": "[parameters('AdminCredential')]"
+                        }
+                    ]
+                }
+            },
+            "adminPassword": ""
+        },
+        "authConfig-password": {
+            "linuxConfiguration": {
+                "disablePasswordAuthentication": false
+            },
+            "adminPassword": "[parameters('AdminCredential')]"
+        },
+        "authConfig": "[variables(concat('authConfig-',parameters('AdminAuthType')))]"
+    },
+    "resources": [
+        /*********************************************************************
+        *** Provision the needed Storage Accounts
+        ***
+        *** https://msdn.microsoft.com/en-us/library/azure/mt163564.aspx
+        *********************************************************************/
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('saList')[copyIndex()]]",
+            "apiVersion": "[variables('apiVersions').storage]",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {},
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "Storage",
+            "dependsOn": [],
+            "copy": {
+                "name": "storageAccountProvisioningCI",
+                "count": "[length(parameters('saList'))]"
+            }
+        },
+        /*********************************************************************
+        *** One availability set to include all VMs.
+        *********************************************************************/
+        {
+            "comments": "Availailability set for all VMs",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('namePrefixes').availabilitySet]",
+            "apiVersion": "[variables('apiVersions').compute]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "platformUpdateDomainCount": 20,
+                "platformFaultDomainCount": 3
+            },
+            "dependsOn": []
+        },
+        /*********************************************************************
+        *** Build list of Server IPs
+        *********************************************************************/
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "IPListConstructor",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'generateIPList.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "subnetCIDR": {
+                        "value": "[parameters('SubnetAddressPrefix')]"
+                    },
+                    "addressCount": {
+                        "value": "[parameters('VmCount')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** NICs, one per VM.  Connected to the Load Balancer
+        *********************************************************************/
+        {
+            "comments": "NICs",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('namePrefixes').nic, padLeft(copyIndex(),3,'0'))]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[parameters('Location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]",
+                            "subnet": {
+                                "id": "[concat(variables('resourceIDs').virtualNetwork, '/subnets/', parameters('SubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[variables('resourceIDs').loadbalancerBEP]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[concat(variables('resourceIDs').loadbalancer,'/inboundNatRules/', variables('natRulePrefix'), copyindex())]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('namePrefixes').nsg)]"
+                }
+            },
+            "copy": {
+                "name": "nicCI",
+                "count": "[parameters('VmCount')]"
+            },
+            "dependsOn": [
+                "PublicIP",
+                "VirtualNetwork",
+                "IPListConstructor",
+                "[variables('namePrefixes').nsg]",
+                "[variables('namePrefixes').loadBalancer]"
+            ]
+        },
+        /*********************************************************************
+        *** Network Security Group
+        *********************************************************************/
+        {
+            "comments": "Network security group - just SSH",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('namePrefixes').nsg]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[parameters('Location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-ssh",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "http-probe",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jHttpPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1010,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow-https",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jHttpsPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1020,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "master-bolt",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jMasterBoltPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1030,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "slave-bolt",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jSlaveBoltPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1040,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "neo4j-cluster-communication",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jClusterPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1050,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "neo4j-transaction-communiocation",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "[string(parameters('Neo4jTransactionPort'))]",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1060,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        /*********************************************************************
+        *** Public IP
+        ***
+        *** Execute one of publicIPAddress-{new,existing}.json, depending on
+        *** whether the PublicIP exists.
+        *********************************************************************/
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "PublicIP",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'publicip-', parameters('PublicIPNewOrExisting'), '.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "PublicIPNameForNew": {
+                        "value": "[variables('namePrefixes').publicip]"
+                    },
+                    "PublicIPNameExisting": {
+                        "value": "[parameters('PublicIPName')]"
+                    },
+                    "PublicIPAllocationMethod": {
+                        "value": "[parameters('PublicIPAllocationMethod')]"
+                    },
+                    "IdleTimeoutInMinutes": {
+                        "value": "[parameters('PublicIPIdleTimeoutInMinutes')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** Load Balancer
+        *********************************************************************/
+        { /* build a list of NAT rules for the loadBalancer */
+            "type": "Microsoft.Resources/deployments",
+            "name": "NATListConstructor",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'generateNatRules.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": { /* SSH NAT Rules */
+                    "ruleNamePrefix": {
+                        "value": "[variables('natRulePrefix')]"
+                    },
+                    "ruleCount": {
+                        "value": "[parameters('VmCount')]"
+                    },
+                    "frontendPortBase": {
+                        "value": 50000
+                    },
+                    "backendPort": {
+                        "value": 22
+                    },
+                    "protocol": {
+                        "value": "Tcp"
+                    },
+                    "enableFloatingIP": {
+                        "value": false
+                    },
+                    "frontendIPConfigurationID": {
+                        "value": "[variables('resourceIDs').loadbalancerFE]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** LoadBalancer - one shared.
+        ***
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163574.aspx
+        *********************************************************************/
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('namePrefixes').loadBalancer]",
+            "apiVersion": "[variables('apiVersions').network]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "PublicIP",
+                "VirtualNetwork",
+                /* "[variables('resourceIDs').publicIP]", */
+                /* "[reference('PublicIP').outputs.PublicIPResourceID]",*/
+                "NATListConstructor"
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "LoadBalancerFrontEnd",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[reference('PublicIP').outputs.PublicIPResourceID.value]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "Neo4jInstancePool"
+                        /* "id": "[variables('resourceIDs').loadbalancerBEP]"*/
+                    }
+                ],
+                "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
+                "loadBalancingRules": [
+                    {
+                        "name": "HttpsRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('Neo4jHttpsPort')]",
+                            "backendPort": "[parameters('Neo4jHttpsPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "SourceIP",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "MasterBoltRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('Neo4jMasterBoltPort')]",
+                            "backendPort": "[parameters('Neo4jMasterBoltPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "Default",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/masterProbe')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "SlaveBoltRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('Neo4jSlaveBoltPort')]",
+                            "backendPort": "[parameters('Neo4jSlaveBoltPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "Default",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/slaveProbe')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "availabilityProbe",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": "[parameters('Neo4jHttpPort')]",
+                            "requestPath": "/db/manage/server/ha/available",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    },
+                    {
+                        "name": "slaveProbe",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": "[parameters('Neo4jHttpPort')]",
+                            "requestPath": "/db/manage/server/ha/slave",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    },
+                    {
+                        "name": "masterProbe",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": "[parameters('Neo4jHttpPort')]",
+                            "requestPath": "/db/manage/server/ha/master",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+            }
+        },
+        /*********************************************************************
+        *** One Virtual Network (or reference an existing one)
+        ***
+        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163661.aspx
+        *********************************************************************/
+        { /* construct a reference to an existing VNET or a build one then do so. */
+            "type": "Microsoft.Resources/deployments",
+            "name": "VirtualNetwork",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vnetReferencerUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": { /* SSH NAT Rules */
+                    "NetworkName": {
+                        "value": "[parameters('VNetName')]"
+                    },
+                    "NetworkAddressPrefix": { /* e.g., 1.2.3.4/16 */
+                        "value": "[parameters('VNetAddressPrefix')]"
+                    },
+                    "SubnetName": {
+                        "value": "[parameters('SubnetName')]"
+                    },
+                    "SubnetAddressPrefix": {
+                        "value": "[parameters('SubnetAddressPrefix')]"
+                    },
+                    "SubnetStartAddress": {
+                        "value": "[parameters('SubnetStartAddress')]"
+                    },
+                    "ResourceGroupName": { /* the RG which owns the existing VNET */
+                        "value": "[parameters('ResourceGroupName')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    }
+                }
+            }
+        },
+        /*********************************************************************
+        *** Set of Virtual Machines
+        *********************************************************************/
+        {
+            "comments": "The set of Virtual Machines",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
+            "apiVersion": "[variables('apiVersions').compute]",
+            "location": "[parameters('Location')]",
+            "tags": {},
+            "properties": {
+                "availabilitySet": {
+                    "id": "[variables('resourceIDs').availabilitySet]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('VmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('imageReference')]",
+                    "osDisk": {
+                        "name": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-OS')]",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat('https://',parameters('saListByVM')[copyIndex()],'.blob.core.windows.net/vhds/', variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-OS.vhd')]"
+                        },
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-Data-0')]",
+                            "createOption": "Empty",
+                            "vhd": {
+                                "uri": "[concat('https://',parameters('saListByVM')[copyIndex()], '.blob.core.windows.net/vhds/', variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'),'-Data-0.vhd')]"
+                            },
+                            "caching": "None",
+                            "diskSizeGB": "1023"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[concat(variables('namePrefixes').vm,padLeft(copyIndex(),3,'0'))]",
+                    "adminUsername": "[parameters('AdminUserName')]",
+                    "linuxConfiguration": "[variables('authConfig').linuxConfiguration]",
+                    "secrets": [],
+                    "adminPassword": "[variables('authConfig').adminPassword]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('namePrefixes').nic,padLeft(copyIndex(),3,'0')))]"
+                        }
+                    ]
+                }
+            },
+            "copy": {
+                "name": "vmCI",
+                "count": "[parameters('VmCount')]"
+            },
+            "dependsOn": [
+                "[variables('resourceIDs').availabilitySet]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('saListByVM')[copyIndex()])]",
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('namePrefixes').nic,padLeft(copyIndex(),3,'0')))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[concat('ConfigureVM-', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
+            ],
+            "copy": {
+                "name": "vmExtLoop",
+                "count": "[parameters('VmCount')]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('artifactsBase'), 'scriptTemplate.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "VmName": {
+                        "value": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
+                    },
+                    "Location": {
+                        "value": "[parameters('Location')]"
+                    },
+                    "ArtifactsBase": {
+                        "value": "[parameters('ArtifactsBase')]"
+                    },
+                    "script": {
+                        "value": "[parameters('extensionScript')]"
+                    },
+                    "Version": {
+                        "value": "[parameters('Neo4jVersion')]"
+                    },
+                    "Password": {
+                        "value": "[parameters('Neo4jPassword')]"
+                    },
+                    "httpPort": {
+                        "value": "[string(parameters('Neo4jHttpPort'))]"
+                    },
+                    "httpsPort": {
+                        "value": "[string(parameters('Neo4jHttpsPort'))]"
+                    },
+                    "masterBoltPort": {
+                        "value": "[string(parameters('Neo4jMasterBoltPort'))]"
+                    },
+                    "slaveBoltPort": {
+                        "value": "[string(parameters('Neo4jSlaveBoltPort'))]"
+                    },
+                    "HeapSize": {
+                        "value": "[string(parameters('Neo4jHeapSize'))]"
+                    },
+                    "CoordPort": {
+                        "value": "[string(parameters('Neo4jClusterPort'))]"
+                    },
+                    "DataPort": {
+                        "value": "[string(parameters('Neo4jTransactionPort'))]"
+                    },
+                    "myId": {
+                        "value": "[string(copyIndex(1))]"
+                    },
+                    "myIp": {
+                        "value": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]"
+                    },
+                    "allIps": {
+                        "value": "[trim(replace(replace(replace(string(reference('IPListConstructor').outputs.IPList.value),'\"',''), '[', ''),']',''))]"
+                    }
+                }
+            }
+        }
+    ]
+}
