@@ -22,6 +22,6 @@ if ! azure group show "$RESOURCE_GROUP" &> /dev/null; then
 fi
 
 azure group deployment create\
-    --template-uri "https://raw.githubusercontent.com/thobe/carcassour/master/mainTemplate.json" \
+    --template-uri "https://raw.githubusercontent.com/neo4j/azure-neo4j/master/ha/mainTemplate.json" \
     -p "$PARAMETERS" -g "$RESOURCE_GROUP" -n "$DEPLOYMENT"
 exit $?

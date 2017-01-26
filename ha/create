@@ -99,7 +99,7 @@ $(dirname $0)/deploy <<JSON
     },
 
     "ArtifactsBase": {
-        "value": "https://raw.githubusercontent.com/thobe/carcassour/master"
+        "value": "https://raw.githubusercontent.com/neo4j/azure-neo4j/master/ha"
     }$EXTENSION
 }
 JSON

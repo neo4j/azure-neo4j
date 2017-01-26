@@ -33,7 +33,7 @@
             "metadata": {
                 "artifactsBaseUrl": ""
             },
-            "defaultValue": "https://raw.githubusercontent.com/thobe/carcassour/master"
+            "defaultValue": "https://raw.githubusercontent.com/neo4j/azure-neo4j/master/ha"
         }
     },
     "variables": {},
