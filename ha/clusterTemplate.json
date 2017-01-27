@@ -540,6 +540,26 @@
                 "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
                 "loadBalancingRules": [
                     {
+                        "name": "HttpRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[variables('resourceIDs').loadbalancerFE]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[variables('resourceIDs').loadbalancerBEP]"
+                            },
+                            "frontendPort": "[parameters('Neo4jHttpPort')]",
+                            "backendPort": "[parameters('Neo4jHttpPort')]",
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "protocol": "Tcp",
+                            "loadDistribution": "SourceIP",
+                            "probe": {
+                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
+                            }
+                        }
+                    },
+                    {
                         "name": "HttpsRule",
                         "properties": {
                             "frontendIPConfiguration": {
