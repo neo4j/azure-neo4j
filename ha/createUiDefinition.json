@@ -80,6 +80,24 @@
                         }
                     },
                     {
+                        "name": "sslCert",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "SSL Certificate",
+                        "toolTip": "SSL certificate (domain.cert) to use for HTTPS access. By default a self-signed certificate is generated.",
+                        "constraints": {
+                            "required": false
+                        }
+                    },
+                    {
+                        "name": "sslKey",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "SSL Private Key",
+                        "toolTip": "SSL private key (domain.key) to use for HTTPS access. By default a self-signed certificate is generated.",
+                        "constraints": {
+                            "required": false
+                        }
+                    },
+                    {
                         "name": "ClusterName",
                         "type": "Microsoft.Common.TextBox",
                         "label": "Neo Cluster Name",
@@ -243,7 +261,10 @@
 
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
-            "Neo4jHeapSize": "[concat(string(int(mul(float(steps('neo4jConfig').HeapGB),1024))),'M')]"
+            "Neo4jHeapSize": "[concat(string(int(mul(float(steps('neo4jConfig').HeapGB),1024))),'M')]",
+
+            "sslCert": "[steps('neo4jConfig').sslCert]",
+            "sslKey": "[steps('neo4jConfig').sslKey]"
         }
     }
 }

@@ -3,6 +3,8 @@
 #    HEAP_SIZE           fraction of RAM used by the JVM heap
 #    NEO4J_PASSWORD      password
 #    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
+#    SSL_KEY             SSL Private key to use for HTTPS             (optional)
+#    SSL_CERT            SSL Certificate to use for HTTPS             (optional)
 #    HTTP_PORT           the port for HTTP access
 #    HTTPS_PORT          the port for HTTPS access
 #    HTTP_LOGGING        'true' to enable http logging
@@ -110,6 +112,17 @@ elif [ -z "$HOST_IPS" ]; then
     exit 1
 fi
 
+configure_ssl()
+{
+  # Write user defined SSL certificates
+  if [ -n "${SSL_CERT}" ] && [ -n "${SSL_KEY}" ]; then
+    mkdir -p /var/lib/neo4j/certificates
+    echo "${SSL_CERT}" > /var/lib/neo4j/certificates/neo4j.cert
+    echo "${SSL_KEY}" > /var/lib/neo4j/certificates/neo4j.key
+    chown --recursive neo4j: /var/lib/neo4j/certificates/*
+    chmod 600 /var/lib/neo4j/certificates/*
+  fi
+}
 
 setting() {
     local setting="${1}"
@@ -282,6 +295,7 @@ systemctl stop neo4j
 systemctl enable neo4j
 configure_lvm /dev/sdc
 enable_lvm_autoextend
+configure_ssl
 configure_neo4j
 systemctl start neo4j
 set_neo4j_password

@@ -77,6 +77,13 @@
             "maxValue": 30
         },
 
+        "sslCert": {
+            "type": "string"
+        },
+        "sslKey": {
+            "type": "string"
+        },
+
         "Neo4jVersion": {
             "type": "string"
         },
@@ -794,6 +801,12 @@
                     },
                     "Password": {
                         "value": "[parameters('Neo4jPassword')]"
+                    },
+                    "sslCert": {
+                        "value": "[parameters('sslCert')]"
+                    },
+                    "sslKey": {
+                        "value": "[parameters('sslKey')]"
                     },
                     "httpPort": {
                         "value": "[string(parameters('Neo4jHttpPort'))]"

@@ -83,6 +83,15 @@
             }
         },
 
+        "sslCert": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "sslKey": {
+            "type": "securestring",
+            "defaultValue": ""
+        },
+
         "Neo4jVersion": {
             "type": "string",
             "defaultValue": ""
@@ -246,6 +255,13 @@
                     },
                     "PublicIPIdleTimeoutInMinutes": {
                         "value": "[parameters('PublicIPIdleTimeoutInMinutes')]"
+                    },
+
+                    "sslCert": {
+                        "value": "[parameters('sslCert')]"
+                    },
+                    "sslKey": {
+                        "value": "[parameters('sslKey')]"
                     },
 
                     "Neo4jVersion": {
