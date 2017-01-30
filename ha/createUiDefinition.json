@@ -81,20 +81,28 @@
                     },
                     {
                         "name": "sslCert",
-                        "type": "Microsoft.Common.TextBox",
+                        "type": "Microsoft.Common.FileUpload",
                         "label": "SSL Certificate",
                         "toolTip": "SSL certificate (domain.cert) to use for HTTPS access. By default a self-signed certificate is generated.",
                         "constraints": {
-                            "required": false
+                            "required": false,
+                            "accept": ".cert"
+                        },
+                        "options": {
+                            "uploadMode": "file"
                         }
                     },
                     {
                         "name": "sslKey",
-                        "type": "Microsoft.Common.TextBox",
+                        "type": "Microsoft.Common.FileUpload",
                         "label": "SSL Private Key",
                         "toolTip": "SSL private key (domain.key) to use for HTTPS access. By default a self-signed certificate is generated.",
                         "constraints": {
-                            "required": false
+                            "required": false,
+                            "accept": ".key"
+                        },
+                        "options": {
+                            "uploadMode": "file"
                         }
                     },
                     {
