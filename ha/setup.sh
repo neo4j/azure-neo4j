@@ -114,8 +114,10 @@ fi
 
 configure_ssl()
 {
+  touch /var/log/neo4j/configured_ssl
   # Write user defined SSL certificates
   if [ -n "${SSL_CERT}" ] && [ -n "${SSL_KEY}" ]; then
+    touch /var/log/neo4j/configured_ssl_with_stuff
     mkdir -p /var/lib/neo4j/certificates
     echo "${SSL_CERT}" > /var/lib/neo4j/certificates/neo4j.cert
     echo "${SSL_KEY}" > /var/lib/neo4j/certificates/neo4j.key
