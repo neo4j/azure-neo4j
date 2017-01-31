@@ -105,16 +105,23 @@
         "Neo4jHttpPort": {
             "type": "int"
         },
+        "Neo4jBoltPort": {
+            "type": "int",
+            "defaultValue": 7687,
+            "metadata": {
+                "description": "The port used for bolt"
+            }
+        },
         "Neo4jClusterPort": {
             "type": "int",
-            "defaultValue": 5300,
+            "defaultValue": 5001,
             "metadata": {
                 "description": "The port used for communication between instances in the cluster"
             }
         },
         "Neo4jTransactionPort": {
             "type": "int",
-            "defaultValue": 5400,
+            "defaultValue": 6001,
             "metadata": {
                 "description": "The port used to read transaction data from the master"
             }
@@ -376,28 +383,15 @@
                         }
                     },
                     {
-                        "name": "master-bolt",
+                        "name": "allow-bolt",
                         "properties": {
                             "protocol": "TCP",
                             "sourcePortRange": "*",
-                            "destinationPortRange": "[string(parameters('Neo4jMasterBoltPort'))]",
+                            "destinationPortRange": "[string(parameters('Neo4jBoltPort'))]",
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
                             "priority": 1030,
-                            "direction": "Inbound"
-                        }
-                    },
-                    {
-                        "name": "slave-bolt",
-                        "properties": {
-                            "protocol": "TCP",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "[string(parameters('Neo4jSlaveBoltPort'))]",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Allow",
-                            "priority": 1040,
                             "direction": "Inbound"
                         }
                     },
@@ -410,7 +404,7 @@
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
-                            "priority": 1050,
+                            "priority": 1040,
                             "direction": "Inbound"
                         }
                     },
@@ -423,7 +417,7 @@
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
-                            "priority": 1060,
+                            "priority": 1050,
                             "direction": "Inbound"
                         }
                     }
@@ -489,7 +483,7 @@
                         "value": "[parameters('VmCount')]"
                     },
                     "frontendPortBase": {
-                        "value": 50000
+                        "value": 22000
                     },
                     "backendPort": {
                         "value": 22
@@ -556,7 +550,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jHttpPort')]",
-                            "backendPort": "[parameters('Neo4jHttpPort')]",
+                            "backendPort": 7474,
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -576,7 +570,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jHttpsPort')]",
-                            "backendPort": "[parameters('Neo4jHttpsPort')]",
+                            "backendPort": 7473,
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -596,7 +590,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jMasterBoltPort')]",
-                            "backendPort": "[parameters('Neo4jMasterBoltPort')]",
+                            "backendPort": 7687,
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -616,7 +610,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jSlaveBoltPort')]",
-                            "backendPort": "[parameters('Neo4jSlaveBoltPort')]",
+                            "backendPort": 7687,
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -814,11 +808,8 @@
                     "httpsPort": {
                         "value": "[string(parameters('Neo4jHttpsPort'))]"
                     },
-                    "masterBoltPort": {
-                        "value": "[string(parameters('Neo4jMasterBoltPort'))]"
-                    },
-                    "slaveBoltPort": {
-                        "value": "[string(parameters('Neo4jSlaveBoltPort'))]"
+                    "boltPort": {
+                        "value": "[string(parameters('Neo4jBoltPort'))]"
                     },
                     "HeapSize": {
                         "value": "[string(parameters('Neo4jHeapSize'))]"

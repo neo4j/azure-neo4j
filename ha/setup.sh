@@ -1,18 +1,17 @@
 #!/bin/bash
 # Environment parameters:
-#    HEAP_SIZE           fraction of RAM used by the JVM heap
-#    NEO4J_PASSWORD      password
-#    [NEO4J_VERSION]     version of Neo4j to install                  (optional)
+#    HEAP_SIZE           fraction of RAM used by the JVM heap         (optional)
+#    NEO4J_PASSWORD      password                                     (optional)
+#    NEO4J_VERSION       version of Neo4j to install                  (optional)
 #    SSL_KEY             SSL Private key to use for HTTPS             (optional)
 #    SSL_CERT            SSL Certificate to use for HTTPS             (optional)
-#    HTTP_PORT           the port for HTTP access
-#    HTTPS_PORT          the port for HTTPS access
-#    HTTP_LOGGING        'true' to enable http logging
-#    JOIN_TIMEOUT        how long to (re-)try to join the cluster
-#    MASTER_BOLT_PORT    the port through which the master will accept bolt
-#    SLAVE_BOLT_PORT     the port through which slaves will accept bolt
-#    [COORD_PORT]        port to use for Neo4j HA communication       (HA, optional)
-#    [DATA_PORT]         port to use for Neo4j HA communication       (HA, optional)
+#    HTTP_PORT           the port for HTTP access                     (optional)
+#    HTTPS_PORT          the port for HTTPS access                    (optional)
+#    BOLT_PORT           the port for BOLT access                     (optional)
+#    HTTP_LOGGING        'true' to enable http logging                (optional)
+#    JOIN_TIMEOUT        how long to (re-)try to join the cluster     (optional)
+#    COORD_PORT          port to use for Neo4j HA communication       (HA, optional)
+#    DATA_PORT           port to use for Neo4j HA communication       (HA, optional)
 #    MY_ID               identifier of this instance in the cluster   (HA)
 #    MY_IP               ip address of this instance                  (HA)
 #    HOST_IPS            ip addresses of all instances in the cluster (HA)
@@ -71,11 +70,11 @@ echo PAGE_MEMORY=${PAGE_MEMORY}k
 
 # (Default value for) COORD_PORT
 if [ -z "$COORD_PORT" ]; then
-    COORD_PORT=5300
+    COORD_PORT=5001
 fi
-# (Default value for) COORD_PORT
+# (Default value for) DATA_PORT
 if [ -z "$DATA_PORT" ]; then
-    DATA_PORT=$(expr $COORD_PORT + 1)
+    DATA_PORT=6001
 fi
 
 # (Default value for) HTTP_PORT
@@ -86,17 +85,9 @@ fi
 if [ -z "$HTTPS_PORT" ]; then
     HTTPS_PORT=7473
 fi
-# (Default value for) MASTER_BOLT_PORT
-if [ -z "$MASTER_BOLT_PORT" ]; then
-    if [ -z "$SLAVE_BOLT_PORT" ]; then
-        MASTER_BOLT_PORT=7687
-    else
-        MASTER_BOLT_PORT="$SLAVE_BOLT_PORT"
-    fi
-fi
-# (Default value for) SLAVE_BOLT_PORT
-if [ -z "$SLAVE_BOLT_PORT" ]; then
-    SLAVE_BOLT_PORT="$MASTER_BOLT_PORT"
+# (Default value for) BOLT_PORT
+if [ -z "$BOLT_PORT" ]; then
+    BOLT_PORT=7687
 fi
 
 if [ -z "$MY_IP" ]; then
@@ -173,23 +164,9 @@ configure_neo4j() {
         setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
     fi
 
-    if [ "$MASTER_BOLT_PORT" = "$SLAVE_BOLT_PORT" ]; then
-        setting dbms.connector.bolt.type    BOLT
-        setting dbms.connector.bolt.enabled true
-        setting dbms.connector.bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
-    else
-        setting dbms.connector.bolt.type
-        setting dbms.connector.bolt.enabled
-        setting dbms.connector.bolt.address
-
-        setting dbms.connector.master_bolt.type    BOLT
-        setting dbms.connector.master_bolt.enabled true
-        setting dbms.connector.master_bolt.address "0.0.0.0:$MASTER_BOLT_PORT"
-
-        setting dbms.connector.slave_bolt.type    BOLT
-        setting dbms.connector.slave_bolt.enabled true
-        setting dbms.connector.slave_bolt.address "0.0.0.0:$SLAVE_BOLT_PORT"
-    fi
+    setting dbms.connector.bolt.type BOLT
+    setting dbms.connector.bolt.enabled true
+    setting dbms.connector.bolt.address "0.0.0.0:${BOLT_PORT}"
 
     setting dbms.connector.https.type       HTTP
     setting dbms.connector.https.enabled    true

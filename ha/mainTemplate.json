@@ -109,14 +109,14 @@
         },
         "Neo4jMasterBoltPort": {
             "type": "int",
-            "defaultValue": 7000,
+            "defaultValue": 7687,
             "metadata": {
                 "description": "The port to use for (public) BOLT access to the primary instance."
             }
         },
         "Neo4jSlaveBoltPort": {
             "type": "int",
-            "defaultValue": 8000,
+            "defaultValue": 7688,
             "metadata": {
                 "description": "The port to use for (public) BOLT access to the secondary instances."
             }
