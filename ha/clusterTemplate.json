@@ -96,9 +96,6 @@
         "Neo4jMasterBoltPort": {
             "type": "int"
         },
-        "Neo4jSlaveBoltPort": {
-            "type": "int"
-        },
         "Neo4jHttpsPort": {
             "type": "int"
         },
@@ -597,26 +594,6 @@
                             "loadDistribution": "Default",
                             "probe": {
                                 "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/masterProbe')]"
-                            }
-                        }
-                    },
-                    {
-                        "name": "SlaveBoltRule",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[variables('resourceIDs').loadbalancerFE]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[variables('resourceIDs').loadbalancerBEP]"
-                            },
-                            "frontendPort": "[parameters('Neo4jSlaveBoltPort')]",
-                            "backendPort": 7687,
-                            "enableFloatingIP": false,
-                            "idleTimeoutInMinutes": 5,
-                            "protocol": "Tcp",
-                            "loadDistribution": "Default",
-                            "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/slaveProbe')]"
                             }
                         }
                     }
