@@ -126,8 +126,8 @@
                         "toolTip": "Number of VMs in the Neo4j cluster",
                         "constraints": {
                             "required": true,
-                            "regex": "^(1|2|3|4|5|6|7|8|9|10|11|12)$",
-                            "validationMessage": "Number of VM must be between 1 and 12, inclusive."
+                            "regex": "^(3|4|5|6|7|8|9|10|11|12)$",
+                            "validationMessage": "Number of VM must be between 3 and 12, inclusive."
                         },
                         "visible": true
                     },

@@ -584,7 +584,7 @@
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
-                            "loadDistribution": "Default",
+                            "loadDistribution": "SourceIP",
                             "probe": {
                                 "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/masterProbe')]"
                             }
