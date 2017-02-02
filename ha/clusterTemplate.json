@@ -18,8 +18,8 @@
 
         "VmCount": {
             "type": "int",
-            "minValue": 1,
-            "defaultValue": 1
+            "minValue": 3,
+            "defaultValue": 3
         },
         "VmSize": {
             "type": "string"
