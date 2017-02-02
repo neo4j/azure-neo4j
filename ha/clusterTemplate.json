@@ -93,9 +93,6 @@
         "Neo4jHeapSize": {
             "type": "string"
         },
-        "Neo4jMasterBoltPort": {
-            "type": "int"
-        },
         "Neo4jHttpsPort": {
             "type": "int"
         },
@@ -103,11 +100,7 @@
             "type": "int"
         },
         "Neo4jBoltPort": {
-            "type": "int",
-            "defaultValue": 7687,
-            "metadata": {
-                "description": "The port used for bolt"
-            }
+            "type": "int"
         },
         "Neo4jClusterPort": {
             "type": "int",
@@ -547,7 +540,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jHttpPort')]",
-                            "backendPort": 7474,
+                            "backendPort": "[parameters('Neo4jHttpPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -567,7 +560,7 @@
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
                             "frontendPort": "[parameters('Neo4jHttpsPort')]",
-                            "backendPort": 7473,
+                            "backendPort": "[parameters('Neo4jHttpsPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",
@@ -578,7 +571,7 @@
                         }
                     },
                     {
-                        "name": "MasterBoltRule",
+                        "name": "BoltRule",
                         "properties": {
                             "frontendIPConfiguration": {
                                 "id": "[variables('resourceIDs').loadbalancerFE]"
@@ -586,8 +579,8 @@
                             "backendAddressPool": {
                                 "id": "[variables('resourceIDs').loadbalancerBEP]"
                             },
-                            "frontendPort": "[parameters('Neo4jMasterBoltPort')]",
-                            "backendPort": 7687,
+                            "frontendPort": "[parameters('Neo4jBoltPort')]",
+                            "backendPort": "[parameters('Neo4jBoltPort')]",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 5,
                             "protocol": "Tcp",

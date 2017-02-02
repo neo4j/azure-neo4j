@@ -107,7 +107,7 @@
                 "description": "Portion of memory to dedicate to heap. Empty means use current default value."
             }
         },
-        "Neo4jMasterBoltPort": {
+        "Neo4jBoltPort": {
             "type": "int",
             "defaultValue": 7687,
             "metadata": {
@@ -266,8 +266,8 @@
                     "Neo4jHeapSize": {
                         "value": "[parameters('Neo4jHeapSize')]"
                     },
-                    "Neo4jMasterBoltPort": {
-                        "value": "[parameters('Neo4jMasterBoltPort')]"
+                    "Neo4jBoltPort": {
+                        "value": "[parameters('Neo4jBoltPort')]"
                     },
                     "Neo4jHttpsPort": {
                         "value": "[parameters('Neo4jHttpsPort')]"
