@@ -1,0 +1,6 @@
+# All options are optional
+#INSTANCE_COUNT=3
+#NEO4J_PASSWORD
+#HEAP_SIZE=1G
+#PUBKEY
+#USERNAME

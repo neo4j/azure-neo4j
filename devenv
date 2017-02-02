@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export PATH=$(pwd)/bin:${PATH}
+
+if [ -f ./devenv.local ]; then
+    . ./devenv.local
+    export CLUSTERNAME_PREFIX
+    export INSTANCE_COUNT
+    export NEO4J_PASSWORD
+    export HEAP_SIZE
+    export PUBKEY
+    export USERNAME
+else
+    echo "Couldn't find ./devenv.local."
+fi

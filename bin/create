@@ -1,23 +1,23 @@
 #!/bin/bash
 
-if [ -z "$CLUSTERNAME_PREFIX" ]; then
+if [ -z "${CLUSTERNAME_PREFIX}" ]; then
     CLUSTERNAME_PREFIX="neo$(cat /dev/urandom | env LC_CTYPE=C tr -cd 'a-z0-9A-Z' | head -c 8)"
 fi
-if [ -z "$INSTANCES" ]; then
-    INSTANCES=1
+if [ -z "${INSTANCE_COUNT}" ]; then
+    INSTANCE_COUNT=3
 fi
-if [ -z "$NEO4J_PASSWORD" ]; then
+if [ -z "${NEO4J_PASSWORD}" ]; then
     read -p "Neo4j Password: " -s NEO4J_PASSWORD
     echo
 fi
-if [ -z "$HEAP_SIZE" ]; then
-    HEAP_SIZE="42%"
+if [ -z "${HEAP_SIZE}" ]; then
+    HEAP_SIZE="1G"
 fi
 
-if [ -z "$PUBKEY" ]; then
+if [ -z "${PUBKEY}" ]; then
     PUBKEY=$(cat ~/.ssh/id_rsa.pub)
 fi
-if [ -z "$USERNAME" ]; then
+if [ -z "${USERNAME}" ]; then
     USERNAME=$(whoami)
 fi
 
@@ -39,24 +39,24 @@ fi
 $(dirname $0)/deploy <<JSON
 {
     "ClusterNamePrefix": {
-        "value": "$CLUSTERNAME_PREFIX"
+        "value": "${CLUSTERNAME_PREFIX}"
     },
 
     "VmCount": {
-        "value": $INSTANCES
+        "value": ${INSTANCE_COUNT}
     },
     "VmSize": {
         "value": "Standard_A1"
     },
 
     "AdminUserName": {
-        "value": "$USERNAME"
+        "value": "${USERNAME}"
     },
     "AdminAuthType": {
         "value": "sshpublickey"
     },
     "AdminCredential": {
-        "value": "$PUBKEY"
+        "value": "${PUBKEY}"
     },
 
     "VNetNewOrExisting": {
@@ -77,7 +77,6 @@ $(dirname $0)/deploy <<JSON
     "SubnetStartAddress": {
         "value": "10.0.1.0"
     },
-
     "PublicIPNewOrExisting": {
         "value": "new"
     },
@@ -92,10 +91,10 @@ $(dirname $0)/deploy <<JSON
     },
 
     "Neo4jPassword": {
-        "value": "$NEO4J_PASSWORD"
+        "value": "${NEO4J_PASSWORD}"
     },
     "Neo4jHeapSize": {
-        "value": "$HEAP_SIZE"
+        "value": "${HEAP_SIZE}"
     },
 
     "ArtifactsBase": {
