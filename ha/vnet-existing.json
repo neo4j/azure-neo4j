@@ -5,8 +5,11 @@
         "NetworkName": {
             "type": "string"
         },
-        "NetworkAddressPrefix": { /* e.g., 1.2.3.4/16 */
-            "type": "string"
+        "NetworkAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "CIDR for Virtual Network, e.g., 1.2.3.4/16"
+            }
         },
         "SubnetName": {
             "type": "string"
@@ -17,15 +20,16 @@
         "SubnetStartAddress": {
             "type": "string"
         },
-        "ResourceGroupName": { /* the RG which owns the existing VNET */
-            "type": "string"
+        "ResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "the RG which owns the existing VNET"
+            }
         },
-        "ApiVersions": {
+        "Neo4Jtags": {
             "type": "object",
-            "defaultValue": {
-                "storage": "2016-03-10",
-                "compute": "2015-06-15",
-                "network": "2016-07-01"
+            "metadata": {
+                "description": "Dictionary of tags to apply to the VNET"
             }
         },
         "ArtifactsBase": {
@@ -41,7 +45,7 @@
     "outputs": {
         "vnetResourceID": {
             "type": "string",
-            "value": "[resourceID(parameters(ResourceGroupName), 'Microsoft.Network/virtualNetworks', parameters('NetworkName'))]"
+            "value": "[resourceID(parameters('ResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('NetworkName'))]"
         }
     }
 }

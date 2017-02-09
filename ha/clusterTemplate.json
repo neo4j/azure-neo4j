@@ -129,7 +129,12 @@
                 "description": "List of storage account to use, indexed by ordinal VM number"
             }
         },
-
+        "Neo4JTags": {
+            "type": "object",
+            "metadata": {
+                "description": "Dictionary of tags to apply to the various resources"
+            }
+        },
         "ArtifactsBase": {
             "type": "string",
             "metadata": {
@@ -153,11 +158,6 @@
             "publicip": "[concat(parameters('ClusterNamePrefix'),'-pip')]",
             "loadBalancer": "[concat(parameters('ClusterNamePrefix'),'-lb')]",
             "availabilitySet": "[concat(parameters('ClusterNamePrefix'), '-as')]"
-        },
-        "apiVersions": { /* Centralize resource API versions */
-            "storage": "2016-01-01",
-            "compute": "2015-06-15",
-            "network": "2016-07-01"
         },
         "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
         "resourceIDs": {
@@ -214,9 +214,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[parameters('saList')[copyIndex()]]",
-            "apiVersion": "[variables('apiVersions').storage]",
+            "apiVersion": "2016-12-01",
             "location": "[resourceGroup().location]",
-            "tags": {},
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {},
             "sku": {
                 "name": "Standard_LRS"
@@ -232,11 +232,11 @@
         *** One availability set to include all VMs.
         *********************************************************************/
         {
-            "comments": "Availailability set for all VMs",
             "type": "Microsoft.Compute/availabilitySets",
             "name": "[variables('namePrefixes').availabilitySet]",
-            "apiVersion": "[variables('apiVersions').compute]",
+            "apiVersion": "2016-08-30",
             "location": "[resourceGroup().location]",
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "platformUpdateDomainCount": 20,
                 "platformFaultDomainCount": 3
@@ -249,7 +249,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "IPListConstructor",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "dependsOn": [],
             "properties": {
                 "mode": "Incremental",
@@ -274,11 +274,11 @@
         *** NICs, one per VM.  Connected to the Load Balancer
         *********************************************************************/
         {
-            "comments": "NICs",
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[concat(variables('namePrefixes').nic, padLeft(copyIndex(),3,'0'))]",
-            "apiVersion": "[variables('apiVersions').network]",
+            "apiVersion": "2016-12-01",
             "location": "[parameters('Location')]",
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -324,19 +324,21 @@
         },
         /*********************************************************************
         *** Network Security Group
+        ***
+        *** SSH, LB Probes, HTTP[s] + Neo communication",
         *********************************************************************/
         {
-            "comments": "Network security group - just SSH",
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "[variables('namePrefixes').nsg]",
-            "apiVersion": "[variables('apiVersions').network]",
+            "apiVersion": "2016-12-01",
             "location": "[parameters('Location')]",
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "securityRules": [
                     {
                         "name": "default-allow-ssh",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "22",
                             "sourceAddressPrefix": "*",
@@ -349,7 +351,7 @@
                     {
                         "name": "http-probe",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "[string(parameters('Neo4jHttpPort'))]",
                             "sourceAddressPrefix": "*",
@@ -362,7 +364,7 @@
                     {
                         "name": "allow-https",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "[string(parameters('Neo4jHttpsPort'))]",
                             "sourceAddressPrefix": "*",
@@ -375,7 +377,7 @@
                     {
                         "name": "allow-bolt",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "[string(parameters('Neo4jBoltPort'))]",
                             "sourceAddressPrefix": "*",
@@ -388,7 +390,7 @@
                     {
                         "name": "neo4j-cluster-communication",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "[string(parameters('Neo4jClusterPort'))]",
                             "sourceAddressPrefix": "*",
@@ -401,7 +403,7 @@
                     {
                         "name": "neo4j-transaction-communiocation",
                         "properties": {
-                            "protocol": "TCP",
+                            "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "[string(parameters('Neo4jTransactionPort'))]",
                             "sourceAddressPrefix": "*",
@@ -424,7 +426,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "PublicIP",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "dependsOn": [],
             "properties": {
                 "mode": "Incremental",
@@ -445,6 +447,9 @@
                     "IdleTimeoutInMinutes": {
                         "value": "[parameters('PublicIPIdleTimeoutInMinutes')]"
                     },
+                    "Neo4Jtags": {
+                        "value": "[parameters('Neo4JTags')]"
+                    },
                     "ArtifactsBase": {
                         "value": "[parameters('ArtifactsBase')]"
                     }
@@ -457,7 +462,7 @@
         { /* build a list of NAT rules for the loadBalancer */
             "type": "Microsoft.Resources/deployments",
             "name": "NATListConstructor",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "dependsOn": [],
             "properties": {
                 "mode": "Incremental",
@@ -501,13 +506,12 @@
         {
             "type": "Microsoft.Network/loadBalancers",
             "name": "[variables('namePrefixes').loadBalancer]",
-            "apiVersion": "[variables('apiVersions').network]",
+            "apiVersion": "2016-12-01",
             "location": "[resourceGroup().location]",
+            "tags": "[parameters('Neo4JTags')]",
             "dependsOn": [
                 "PublicIP",
                 "VirtualNetwork",
-                /* "[variables('resourceIDs').publicIP]", */
-                /* "[reference('PublicIP').outputs.PublicIPResourceID]",*/
                 "NATListConstructor"
             ],
             "properties": {
@@ -525,7 +529,6 @@
                 "backendAddressPools": [
                     {
                         "name": "Neo4jInstancePool"
-                        /* "id": "[variables('resourceIDs').loadbalancerBEP]"*/
                     }
                 ],
                 "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
@@ -633,7 +636,7 @@
         { /* construct a reference to an existing VNET or a build one then do so. */
             "type": "Microsoft.Resources/deployments",
             "name": "VirtualNetwork",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -659,6 +662,9 @@
                     "ResourceGroupName": { /* the RG which owns the existing VNET */
                         "value": "[parameters('ResourceGroupName')]"
                     },
+                    "Neo4Jtags": {
+                        "value": "[parameters('Neo4JTags')]"
+                    },
                     "ArtifactsBase": {
                         "value": "[parameters('ArtifactsBase')]"
                     }
@@ -669,12 +675,11 @@
         *** Set of Virtual Machines
         *********************************************************************/
         {
-            "comments": "The set of Virtual Machines",
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
-            "apiVersion": "[variables('apiVersions').compute]",
+            "apiVersion": "2016-08-30",
             "location": "[parameters('Location')]",
-            "tags": {},
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "availabilitySet": {
                     "id": "[variables('resourceIDs').availabilitySet]"
@@ -733,7 +738,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[concat('ConfigureVM-', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]"
             ],
@@ -756,6 +761,9 @@
                     },
                     "ArtifactsBase": {
                         "value": "[parameters('ArtifactsBase')]"
+                    },
+                    "Neo4Jtags": {
+                        "value": "[parameters('Neo4JTags')]"
                     },
                     "script": {
                         "value": "[parameters('extensionScript')]"

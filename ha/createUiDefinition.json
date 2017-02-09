@@ -181,7 +181,7 @@
                         "toolTip": "Portion of VM memory set aside for query processing, aka heap (1 to 12GB in 0.5GB increments)",
                         "constraints": {
                             "required": true,
-                            "regex": "^(1|1.5|2|2.5|3|3.5|4|4.5|5|5.5|6|6.5|7|7.5|8|8.5|9|9.5|10|10.5|11|11.5|12)$",
+                            "regex": "^(1|1\\.5|2|2\\.5|3|3\\.5|4|4\\.5|5|5\\.5|6|6\\.5|7|7\\.5|8|8\\.5|9|9\\.5|10|10\\.5|11|11\\.5|12)$",
                             "validationMessage": "GB between 1 and 12 in 0.5GB increments.Number of VM must be between 1 and 12, inclusive."
                         },
                         "visible": true
@@ -198,7 +198,7 @@
                             "subnets": ""
                         },
                         "defaultValue": {
-                            "name": "neoVNET-01",
+                            "name": "neo-vnet-01",
                             "addressPrefixSize": "/16"
                         },
                         "constraints": {

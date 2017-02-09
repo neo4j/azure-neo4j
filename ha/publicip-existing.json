@@ -56,6 +56,12 @@
                 "description": "Optional override of Resource Provider version."
             }
         },
+        "Neo4JTags": {
+            "type": "object",
+            "metadata": {
+                "description": "Dictionary of tags to apply to the Public IP"
+            }
+        },
         "ArtifactsBase": {
             "type": "string",
             "metadata": {

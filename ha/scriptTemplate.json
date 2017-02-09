@@ -59,6 +59,12 @@
             "type": "string",
             "defaultValue": "5m"
         },
+        "Neo4JTags": {
+            "type": "object",
+            "metadata": {
+                "description": "Dictionary of tags to apply to the various resources"
+            }
+        },
         "ArtifactsBase": {
             "type": "string",
             "metadata": {
@@ -66,7 +72,7 @@
                 "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
             },
             "defaultValue": "https://raw.githubusercontent.com/neo4j/azure-neo4j/master/ha"
-        },
+        }
     },
     "variables": {
         "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
@@ -76,12 +82,13 @@
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(parameters('VmName'),'/SetupScript')]",
-            "apiVersion": "2015-05-01-preview",
+            "apiVersion": "2016-08-30",
             "location": "[parameters('Location')]",
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
-                "publisher": "Microsoft.OSTCExtensions",
-                "type": "CustomScriptForLinux",
-                "typeHandlerVersion": "1.5",
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [

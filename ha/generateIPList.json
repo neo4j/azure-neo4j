@@ -15,7 +15,7 @@
             "type": "string",
             "defaultValue": "10.0.1.0/24",
             "metadata": {
-                "description": "Address of the network, with the netmask already applied."
+                "description": "CIDR of the network.  e.g. 10.0.1.0/24"
             }
         },
         "addressCount": {
@@ -47,10 +47,11 @@
         "stepNamePrefix": "IPList-concatStep-"
     },
     "resources": [
-        { /* Dummy Step 0 to get a one-behind starting state for iterative list build from empty list. */
+        {
+            "comments": "Dummy Step 0 to get a one-behind starting state for iterative list build from empty list",
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefix'), '0')]",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -67,10 +68,11 @@
                 }
             }
         },
-        { /* Build a list of NAT rules by appending this one to the previous iteration's result */
+        {
+            "comments": "Build a list of NAT rules by appending this one to the previous iteration's result",
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefix'), copyIndex(1))]",
-            "apiVersion": "2015-01-01",
+            "apiVersion": "2016-09-01",
             "dependsOn": [
                 "[concat(variables('stepNamePrefix'), copyIndex())]"
             ],

@@ -50,10 +50,16 @@
         "ApiVersions": {
             "type": "object",
             "defaultValue": {
-                "network": "2016-07-01"
+                "network": "2016-12-01"
             },
             "metadata": {
                 "description": "Optional override of Resource Provider version."
+            }
+        },
+        "Neo4JTags": {
+            "type": "object",
+            "metadata": {
+                "description": "Dictionary of tags to apply to the Public IP"
             }
         },
         "ArtifactsBase": {
@@ -71,8 +77,9 @@
             "comments": "Newly-created PublicIP",
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[parameters('PublicIPNameForNew')]",
-            "apiVersion": "[parameters('ApiVersions').network]",
+            "apiVersion": "2016-12-01",
             "location": "[parameters('Location')]",
+            "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "publicIPAllocationMethod": "[parameters('PublicIPAllocationMethod')]",
                 "idleTimeoutInMinutes": "[parameters('IdleTimeoutInMinutes')]"
