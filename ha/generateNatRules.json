@@ -95,10 +95,10 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "prefix": { /* result of previous pass */
+                    "prefix": {
                         "value": "[reference(concat(variables('stepNamePrefix'), copyIndex())).outputs.newList.value]"
                     },
-                    "suffix": { /* a rule object */
+                    "suffix": {
                         "value": [
                             {
                                 "name": "[concat(parameters('ruleNamePrefix'), copyIndex())]",

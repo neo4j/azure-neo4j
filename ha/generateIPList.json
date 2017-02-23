@@ -1,6 +1,4 @@
 {
-    /* Generate a list of IP Addresses - Note currently no idea about subnet mask, just sequential from starting point */
-    /* Note: no special check done for subnet overflow - doesn't take CIDR mask into account */
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
@@ -87,10 +85,10 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "prefix": { /* result of previous pass */
+                    "prefix": {
                         "value": "[reference(concat(variables('stepNamePrefix'), copyIndex())).outputs.newList.value]"
                     },
-                    "suffix": { /* the next IP Address -- go from UInt32, back to textual representation such as: 10.0.1.32 */
+                    "suffix": {
                         "value": [
                            "[concat(string(div(add(variables('firstAddress'), copyIndex()),16777216)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),65536),256)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),256),256)),'.',string(mod(add(variables('firstAddress'), copyIndex()),256)))]"
                         ]

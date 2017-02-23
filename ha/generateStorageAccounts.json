@@ -6,7 +6,7 @@
             "type": "string",
             "defaultValue": "neoTest-abcdefghi",
             "minLength": 1,
-            "maxLength": 20, /* we'll cut this shorter below: (24-13-sequentialPadWidth) width to stay within max account name limit of 24, but no way to actively validate this */
+            "maxLength": 20,
             "metadata": {
                 "description": "Prefix to use for each storage account -- only letters and digits allowed, max length of 20 of which up to 11-sequentialPadWidth will be used."
             }
@@ -60,22 +60,20 @@
         }
     },
     "variables": {
-        /* The values in this section are used to create storage acct names based on ClusterName, RG ID and a sequential numeric suffix */
-        "storageAccountNamePrefix": "[replace(replace(parameters('storageAccountNamePrefix'),'-',''),'_','')]", /* kill dash & underscore */
+
+        "storageAccountNamePrefix": "[replace(replace(parameters('storageAccountNamePrefix'),'-',''),'_','')]",
         "stepNamePrefix": "[concat(parameters('storageAccountNamePrefix'),'-gsaByVM-')]",
         "stepNamePrefixBySA": "[concat(parameters('storageAccountNamePrefix'),'-gsaBySA-')]",
         "vmsPerAccount": "[div(parameters('maxVhdsPerStorageAccount'), parameters('vhdsPerVM'))]",
         "accountCount": "[div(add(parameters('numberOfVms'), sub(variables('vmsPerAccount'),1)), variables('vmsPerAccount'))]",
-        /* Do some of the storage account naming calculations */
-        "saUniqueValue": "[uniqueString(resourceGroup().id)]", /* unique to this RG. Always 13 characters long */
-        "saNameLimit": 24, /* max length of an Azure Storage account name */
+        "saUniqueValue": "[uniqueString(resourceGroup().id)]",
+        "saNameLimit": 24,
         "saPrefixCutoff": "[sub(variables('saNameLimit'), add(length(variables('saUniqueValue')), parameters('sequentialPadWidth')))]",
-        /* Retain as much of the prefix as possible */
         "saPrefix": "[trim(substring(concat(variables('storageAccountNamePrefix'),'                                '), 0, variables('saPrefixCutoff')))]",
         "saPrefixFinal": "[toLower(concat(variables('saPrefix'),variables('saUniqueValue')))]"
     },
     "resources": [
-         { /* Dummy Step 0 to get a one-behind starting state for iterative list build from empty list. */
+         {
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefix'), '0')]",
             "apiVersion": "2016-09-01",
@@ -95,7 +93,7 @@
                 }
             }
         },
-        { /* Build a list of Storage account names by appending this one to the previous iterations result */
+        {
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefix'), copyIndex(1))]",
             "apiVersion": "2016-09-01",
@@ -113,10 +111,10 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "prefix": { /* result of previous pass */
+                    "prefix": {
                         "value": "[reference(concat(variables('stepNamePrefix'), copyIndex())).outputs.newList.value]"
                     },
-                    "suffix": { /* a storage account name to use/generate for the VM */
+                    "suffix": {
                         "value": [
                             "[concat(variables('saPrefixFinal'),padLeft(add(div(copyIndex(), variables('vmsPerAccount')),parameters('startingSequenceNumber')),parameters('sequentialPadWidth'), '0'))]"
                         ]
@@ -124,7 +122,7 @@
                 }
             }
         },
-         { /* Dummy Step 0 to get a one-behind starting state for iterative list build from empty list. */
+         {
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefixBySA'), '0')]",
             "apiVersion": "2016-09-01",
@@ -144,7 +142,7 @@
                 }
             }
         },
-        { /* Build a list of unique Storage Account Names used */
+        {
             "type": "Microsoft.Resources/deployments",
             "name": "[concat(variables('stepNamePrefixBySA'), copyIndex(1))]",
             "apiVersion": "2016-09-01",
@@ -162,10 +160,10 @@
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "prefix": { /* result of previous pass */
+                    "prefix": {
                         "value": "[reference(concat(variables('stepNamePrefixBySA'), copyIndex())).outputs.newList.value]"
                     },
-                    "suffix": { /* a storage account name to use/generate for the VM */
+                    "suffix": {
                         "value": [
                             "[concat(variables('saPrefixFinal'),padLeft(copyIndex(parameters('startingSequenceNumber')),parameters('sequentialPadWidth'), '0'))]"
                         ]

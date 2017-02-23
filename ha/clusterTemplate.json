@@ -138,7 +138,7 @@
         "ArtifactsBase": {
             "type": "string",
             "metadata": {
-                "artifactsBaseUrl": "", /* do not remove or change this property */
+                "artifactsBaseUrl": "",
                 "description": "base URL at which Marketplace package files are stored. Value adjusted automatically during Marketplace submission process."
             },
             "defaultValue": "https://raw.githubusercontent.com/neo4j/azure-neo4j/master/ha"
@@ -150,10 +150,10 @@
     },
     "variables": {
         "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
-        "namePrefixes": { /* used to create names for the different resource types */
+        "namePrefixes": {
             "nic": "[concat(parameters('ClusterNamePrefix'),'-nic-')]",
             "nsg": "[concat(parameters('ClusterNamePrefix'),'-sg')]",
-            "storage": "[concat(toLower(trim(parameters('ClusterNamePrefix'))), uniqueString(resourceGroup().id))]", /*unique storage account name based on RG ID */
+            "storage": "[concat(toLower(trim(parameters('ClusterNamePrefix'))), uniqueString(resourceGroup().id))]",
             "vm": "[concat(parameters('ClusterNamePrefix'),'-vm-')]",
             "publicip": "[concat(parameters('ClusterNamePrefix'),'-pip')]",
             "loadBalancer": "[concat(parameters('ClusterNamePrefix'),'-lb')]",
@@ -170,7 +170,7 @@
         },
         "natRulePrefix": "SSH-",
         "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VNetNewOrExisting'), '.json')]",
-        "imageReferenceTest": { /* TODO: update this when image is published */
+        "imageReferenceTest": {
             "publisher": "Canonical",
             "offer": "UbuntuServer",
             "sku": "16.04.0-LTS",
@@ -206,11 +206,6 @@
         "authConfig": "[variables(concat('authConfig-',parameters('AdminAuthType')))]"
     },
     "resources": [
-        /*********************************************************************
-        *** Provision the needed Storage Accounts
-        ***
-        *** https://msdn.microsoft.com/en-us/library/azure/mt163564.aspx
-        *********************************************************************/
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[parameters('saList')[copyIndex()]]",
@@ -228,9 +223,6 @@
                 "count": "[length(parameters('saList'))]"
             }
         },
-        /*********************************************************************
-        *** One availability set to include all VMs.
-        *********************************************************************/
         {
             "type": "Microsoft.Compute/availabilitySets",
             "name": "[variables('namePrefixes').availabilitySet]",
@@ -243,9 +235,6 @@
             },
             "dependsOn": []
         },
-        /*********************************************************************
-        *** Build list of Server IPs
-        *********************************************************************/
         {
             "type": "Microsoft.Resources/deployments",
             "name": "IPListConstructor",
@@ -270,9 +259,6 @@
                 }
             }
         },
-        /*********************************************************************
-        *** NICs, one per VM.  Connected to the Load Balancer
-        *********************************************************************/
         {
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[concat(variables('namePrefixes').nic, padLeft(copyIndex(),3,'0'))]",
@@ -322,11 +308,6 @@
                 "[variables('namePrefixes').loadBalancer]"
             ]
         },
-        /*********************************************************************
-        *** Network Security Group
-        ***
-        *** SSH, LB Probes, HTTP[s] + Neo communication",
-        *********************************************************************/
         {
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "[variables('namePrefixes').nsg]",
@@ -417,12 +398,6 @@
             },
             "dependsOn": []
         },
-        /*********************************************************************
-        *** Public IP
-        ***
-        *** Execute one of publicIPAddress-{new,existing}.json, depending on
-        *** whether the PublicIP exists.
-        *********************************************************************/
         {
             "type": "Microsoft.Resources/deployments",
             "name": "PublicIP",
@@ -456,10 +431,7 @@
                 }
             }
         },
-        /*********************************************************************
-        *** Load Balancer
-        *********************************************************************/
-        { /* build a list of NAT rules for the loadBalancer */
+        {
             "type": "Microsoft.Resources/deployments",
             "name": "NATListConstructor",
             "apiVersion": "2016-09-01",
@@ -470,7 +442,7 @@
                     "uri": "[concat(variables('artifactsBase'), 'generateNatRules.json')]",
                     "contentVersion": "1.0.0.0"
                 },
-                "parameters": { /* SSH NAT Rules */
+                "parameters": {
                     "ruleNamePrefix": {
                         "value": "[variables('natRulePrefix')]"
                     },
@@ -498,11 +470,6 @@
                 }
             }
         },
-        /*********************************************************************
-        *** LoadBalancer - one shared.
-        ***
-        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163574.aspx
-        *********************************************************************/
         {
             "type": "Microsoft.Network/loadBalancers",
             "name": "[variables('namePrefixes').loadBalancer]",
@@ -628,12 +595,7 @@
                 ]
             }
         },
-        /*********************************************************************
-        *** One Virtual Network (or reference an existing one)
-        ***
-        *** Ref: https://msdn.microsoft.com/en-us/library/azure/mt163661.aspx
-        *********************************************************************/
-        { /* construct a reference to an existing VNET or a build one then do so. */
+        {
             "type": "Microsoft.Resources/deployments",
             "name": "VirtualNetwork",
             "apiVersion": "2016-09-01",
@@ -643,11 +605,11 @@
                     "uri": "[variables('vnetReferencerUri')]",
                     "contentVersion": "1.0.0.0"
                 },
-                "parameters": { /* SSH NAT Rules */
+                "parameters": {
                     "NetworkName": {
                         "value": "[parameters('VNetName')]"
                     },
-                    "NetworkAddressPrefix": { /* e.g., 1.2.3.4/16 */
+                    "NetworkAddressPrefix": {
                         "value": "[parameters('VNetAddressPrefix')]"
                     },
                     "SubnetName": {
@@ -659,7 +621,7 @@
                     "SubnetStartAddress": {
                         "value": "[parameters('SubnetStartAddress')]"
                     },
-                    "ResourceGroupName": { /* the RG which owns the existing VNET */
+                    "ResourceGroupName": {
                         "value": "[parameters('ResourceGroupName')]"
                     },
                     "Neo4Jtags": {
@@ -671,9 +633,6 @@
                 }
             }
         },
-        /*********************************************************************
-        *** Set of Virtual Machines
-        *********************************************************************/
         {
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[concat(variables('namePrefixes').vm, padLeft(copyIndex(),3,'0'))]",
