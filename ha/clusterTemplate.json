@@ -146,7 +146,7 @@
         "extensionScript": {
             "type": "string",
             "defaultValue": "setup.sh"
-        },
+        }
     },
     "variables": {
         "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
