@@ -17,8 +17,7 @@
                     "authenticationType": "Authentication type",
                     "password": "Password",
                     "confirmPassword": "Confirm password",
-                    "sshPublicKey": "SSH public key",
-                    "osPlatform": "Linux"
+                    "sshPublicKey": "SSH public key"
                 },
                 "toolTip": {
                     "authenticationType": "",
@@ -50,7 +49,6 @@
                         "label": "Neo4j Version",
                         "defaultValue": "Most recent version",
                         "constraints": {
-                            "required": true,
                             "allowedValues": [
                                 {
                                     "label": "Most recent version",
@@ -115,8 +113,7 @@
                             "required": true,
                             "regex": "^[a-zA-Z0-9\\.\\-]{1,30}$",
                             "validationMessage": "Alphanumeric characters, period(.) and dash(-) are allowed.  The value must be 1-30 characters long."
-                        },
-                        "options": { }
+                        }
                     },
                     {
                         "name": "VmCount",
@@ -127,7 +124,7 @@
                         "constraints": {
                             "required": true,
                             "regex": "^(3|4|5|6|7|8|9|10|11|12)$",
-                            "validationMessage": "Number of VM must be between 3 and 12, inclusive."
+                            "validationMessage": "Number of VMs must be between 3 and 12, inclusive."
                         },
                         "visible": true
                     },
@@ -143,7 +140,6 @@
                             "Standard_D5"
                         ],
                         "constraints": {
-                            "allowedSizes": [ ],
                             "excludedSizes": [
                                 "Basic_A0",
                                 "Basic_A1",
@@ -182,7 +178,7 @@
                         "constraints": {
                             "required": true,
                             "regex": "^(1|1\\.5|2|2\\.5|3|3\\.5|4|4\\.5|5|5\\.5|6|6\\.5|7|7\\.5|8|8\\.5|9|9\\.5|10|10\\.5|11|11\\.5|12)$",
-                            "validationMessage": "GB between 1 and 12 in 0.5GB increments.Number of VM must be between 1 and 12, inclusive."
+                            "validationMessage": "GB between 1 and 12 in 0.5GB increments."
                         },
                         "visible": true
                     },
@@ -227,7 +223,8 @@
                         "name": "PublicIP",
                         "type": "Microsoft.Network.PublicIpAddressCombo",
                         "label": {
-                            "publicIpAddress": "Public IP address"
+                            "publicIpAddress": "Public IP address",
+                            "domainNameLabel": "None"
                         },
                         "defaultValue": {
                             "publicIpAddressName": "NeoIP001"
@@ -249,28 +246,22 @@
         "outputs": {
             "Location": "[location()]",
             "ClusterNamePrefix": "[steps('neo4jConfig').ClusterName]",
-
             "VmCount": "[int(steps('neo4jConfig').VmCount)]",
             "VmSize": "[steps('neo4jConfig').VmSize]",
-
             "AdminUserName": "[basics('adminUsername')]",
             "AdminAuthType": "[toLower(basics('adminCredentials').authenticationType)]",
             "AdminCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
-
             "VNetNewOrExisting": "[toLower(steps('neo4jConfig').VNet.newOrExisting)]",
             "VNetName": "[steps('neo4jConfig').VNet.name]",
             "VNetAddressPrefix": "[steps('neo4jConfig').VNet.addressPrefix]",
             "SubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
             "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
             "SubnetStartAddress": "[steps('neo4jConfig').VNet.subnets.cluster.startAddress]",
-
             "PublicIPNewOrExisting": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
             "PublicIPName": "[steps('neo4jConfig').PublicIP.name]",
-
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
             "Neo4jHeapSize": "[concat(string(int(mul(float(steps('neo4jConfig').HeapGB),1024))),'M')]",
-
             "sslCert": "[steps('neo4jConfig').sslCert]",
             "sslKey": "[steps('neo4jConfig').sslKey]"
         }
