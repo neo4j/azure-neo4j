@@ -72,10 +72,10 @@
                             "password": "Neo4j password",
                             "confirmPassword": "Confirm Neo4j password"
                         },
-                        "toolTip": "The password used to authenticate with the 'Neo4j' user. 1-20 characters from [a-z,A-Z,0-9,'-','.']",
+                        "toolTip": "The password used to authenticate with the 'neo4j' user as 1-64 characters.",
                         "constraints": {
                             "required": true,
-                            "regex": "^[a-zA-Z0-9\\.\\-]{1,20}$"
+                            "regex": "^.{1,64}$"
                         }
                     },
                     {
