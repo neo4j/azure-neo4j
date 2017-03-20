@@ -1,6 +1,6 @@
 {
     "handler": "Microsoft.Compute.MultiVm",
-    "version": "0.1.0-preview",
+    "version": "0.1.2-preview",
     "parameters": {
         "basics": [
             {
@@ -72,9 +72,10 @@
                             "password": "Neo4j password",
                             "confirmPassword": "Confirm Neo4j password"
                         },
-                        "toolTip": "The password used to authenticate with the 'Neo4j' user.",
+                        "toolTip": "The password used to authenticate with the 'Neo4j' user. 1-20 characters from [a-z,A-Z,0-9,'-','.']",
                         "constraints": {
-                            "required": true
+                            "required": true,
+                            "regex": "^[a-zA-Z0-9\\.\\-]{1,20}$"
                         }
                     },
                     {
@@ -111,8 +112,8 @@
                         "toolTip": "The name for your Neo4j cluster.  Used for VM and other name prefixes.",
                         "constraints": {
                             "required": true,
-                            "regex": "^[a-zA-Z0-9\\.\\-]{1,30}$",
-                            "validationMessage": "Alphanumeric characters, period(.) and dash(-) are allowed.  The value must be 1-30 characters long."
+                            "regex": "^[a-zA-Z0-9\\.\\-]{1,11}$",
+                            "validationMessage": "Alphanumeric characters, period(.) and dash(-) are allowed.  The value must be 1-11 characters long."
                         }
                     },
                     {
@@ -161,11 +162,6 @@
                             ]
                         },
                         "osPlatform": "Linux",
-                        "imageReference": {
-                            "publisher": "Canonical",
-                            "offer": "UbuntuServer",
-                            "sku": "16.04.0-LTS"
-                        },
                         "count": "[steps('neo4jConfig').VmCount]",
                         "visible": true
                     },

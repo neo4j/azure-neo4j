@@ -61,7 +61,7 @@
     },
     "variables": {
 
-        "storageAccountNamePrefix": "[replace(replace(parameters('storageAccountNamePrefix'),'-',''),'_','')]",
+        "storageAccountNamePrefix": "[replace(replace(replace(parameters('storageAccountNamePrefix'),'-',''),'_',''),'.','')]",
         "stepNamePrefix": "[concat(parameters('storageAccountNamePrefix'),'-gsaByVM-')]",
         "stepNamePrefixBySA": "[concat(parameters('storageAccountNamePrefix'),'-gsaBySA-')]",
         "vmsPerAccount": "[div(parameters('maxVhdsPerStorageAccount'), parameters('vhdsPerVM'))]",

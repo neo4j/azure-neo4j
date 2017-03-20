@@ -82,7 +82,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(parameters('VmName'),'/SetupScript')]",
-            "apiVersion": "2016-08-30",
+            "apiVersion": "2017-03-30",
             "location": "[parameters('Location')]",
             "tags": "[parameters('Neo4JTags')]",
             "properties": {
