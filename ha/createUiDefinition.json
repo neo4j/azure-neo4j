@@ -72,10 +72,10 @@
                             "password": "Neo4j password",
                             "confirmPassword": "Confirm Neo4j password"
                         },
-                        "toolTip": "The password used to authenticate with the 'neo4j' user as 1-64 characters.",
+                        "toolTip": "The password used to authenticate with the 'neo4j' user as 9-100 characters.",
                         "constraints": {
                             "required": true,
-                            "regex": "^.{1,64}$"
+                            "regex": "^.{9,100}$"
                         }
                     },
                     {
