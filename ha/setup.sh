@@ -238,6 +238,9 @@ set_neo4j_password() {
 
         sleep 1
       done
+
+      # stop it again
+      systemctl stop neo4j
     else
       # use neo4j-admin to set the password
 
@@ -248,7 +251,10 @@ set_neo4j_password() {
       rm -rf /var/lib/neo4j/data/dbms/auth*
 
       # set the password, important to run as neo4j user
-      sudo -u neo4j neo4j-admin set-initial-password "${NEO4J_PASSWORD}"
+      if ! sudo -u neo4j neo4j-admin set-initial-password "${NEO4J_PASSWORD}"; then
+        echo Failed to set neo4j password 1>&2
+        exit 1
+      fi
     fi
   fi
 }
@@ -287,9 +293,9 @@ RULES
 install_neo4j
 systemctl stop neo4j
 systemctl enable neo4j
+set_neo4j_password
 configure_lvm /dev/sdc
 enable_lvm_autoextend
 configure_ssl
 configure_neo4j
-set_neo4j_password
 systemctl start neo4j
