@@ -102,13 +102,7 @@ configure_ssl()
 setting() {
   local setting="${1}"
   local value="${2}"
-  local file="${3:-neo4j.conf}"
-
-  if [ ! -f "/etc/neo4j/${file}" ]; then
-    if [ -f "/etc/neo4j/neo4j.conf" ]; then
-      file="neo4j.conf"
-    fi
-  fi
+  local file="neo4j.conf"
 
   if [ -n "${value}" ]; then
     if ! sed -i "/^ *#* *${setting//./\\.} *=.*$/{s//${setting}=${value}/;h}; $ {x;/./{x;q0};x;q1}" "/etc/neo4j/${file}"; then
@@ -141,12 +135,9 @@ install_neo4j() {
 
 configure_neo4j() {
   # uses: PAGE_MEMORY, HEAP_MEMORY, MY_ID, MY_IP, HOST_IPS, DATA_PORT, COORD_PORT
-
-  if [ "$RAM_MEMORY" -gt 0 ]; then
-    setting dbms.memory.heap.initial_size "$(expr $HEAP_MEMORY / 1024)" neo4j.conf
-    setting dbms.memory.heap.max_size "$(expr $HEAP_MEMORY / 1024)" neo4j.conf
-    setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
-  fi
+  setting dbms.memory.heap.initial_size "$(expr $HEAP_MEMORY / 1024)"
+  setting dbms.memory.heap.max_size "$(expr $HEAP_MEMORY / 1024)"
+  setting dbms.memory.pagecache.size "${PAGE_MEMORY}k"
 
   setting dbms.connector.bolt.type BOLT
   setting dbms.connector.bolt.enabled true
