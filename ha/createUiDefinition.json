@@ -191,10 +191,10 @@
                         },
                         "defaultValue": {
                             "name": "neo-vnet-01",
-                            "addressPrefixSize": "/16"
+                            "addressPrefixSize": "/28"
                         },
                         "constraints": {
-                            "minAddressPrefixSize": "/26"
+                            "minAddressPrefixSize": "/28"
                         },
                         "options": {
                             "hideExisting": false
@@ -204,10 +204,10 @@
                                 "label": "Subnet for Cluster VMs",
                                 "defaultValue": {
                                     "name": "clusterSubnet",
-                                    "addressPrefixSize": "/16"
+                                    "addressPrefixSize": "/28"
                                 },
                                 "constraints": {
-                                    "minAddressPrefixSize": "/26",
+                                    "minAddressPrefixSize": "/28",
                                     "minAddressCount": 12,
                                     "requireContiguousAddresses": true
                                 }
