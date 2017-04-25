@@ -166,19 +166,6 @@
                         "visible": true
                     },
                     {
-                        "name": "HeapGB",
-                        "type": "Microsoft.Common.TextBox",
-                        "label": "GB of memory to reserve for Query space",
-                        "defaultValue": "5.5",
-                        "toolTip": "Portion of VM memory set aside for query processing, aka heap (1 to 12GB in 0.5GB increments)",
-                        "constraints": {
-                            "required": true,
-                            "regex": "^(1|1\\.5|2|2\\.5|3|3\\.5|4|4\\.5|5|5\\.5|6|6\\.5|7|7\\.5|8|8\\.5|9|9\\.5|10|10\\.5|11|11\\.5|12)$",
-                            "validationMessage": "GB between 1 and 12 in 0.5GB increments."
-                        },
-                        "visible": true
-                    },
-                    {
                         "name": "VNet",
                         "type": "Microsoft.Network.VirtualNetworkCombo",
                         "label": {
@@ -257,7 +244,6 @@
             "PublicIPName": "[steps('neo4jConfig').PublicIP.name]",
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
-            "Neo4jHeapSize": "[concat(string(int(mul(float(steps('neo4jConfig').HeapGB),1024))),'M')]",
             "sslCert": "[steps('neo4jConfig').sslCert]",
             "sslKey": "[steps('neo4jConfig').sslKey]"
         }

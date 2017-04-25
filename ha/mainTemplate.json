@@ -95,13 +95,6 @@
             "type": "securestring",
             "defaultValue": ""
         },
-        "Neo4jHeapSize": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Portion of memory to dedicate to heap. Empty means use current default value."
-            }
-        },
         "Neo4jBoltPort": {
             "type": "int",
             "defaultValue": 7687,
@@ -370,9 +363,6 @@
                     },
                     "Neo4jPassword": {
                         "value": "[parameters('Neo4jPassword')]"
-                    },
-                    "Neo4jHeapSize": {
-                        "value": "[parameters('Neo4jHeapSize')]"
                     },
                     "Neo4jBoltPort": {
                         "value": "[parameters('Neo4jBoltPort')]"

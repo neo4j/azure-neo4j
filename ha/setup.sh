@@ -1,6 +1,5 @@
 #!/bin/bash
 # Environment parameters:
-#    HEAP_SIZE           fraction of RAM used by the JVM heap         (optional)
 #    NEO4J_PASSWORD      password                                     (optional)
 #    NEO4J_VERSION       version of Neo4j to install                  (optional)
 #    SSL_KEY             SSL Private key to use for HTTPS             (optional)
@@ -16,57 +15,42 @@
 #    MY_IP               ip address of this instance                  (HA)
 #    HOST_IPS            ip addresses of all instances in the cluster (HA)
 
-# Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from HEAP_SIZE and RAM_MEMORY - all *_MEMORY variables are in kiB
-RAM_MEMORY=$(cat /proc/meminfo | grep ^MemTotal | sed -e 's/: */ /g' | cut -d\  -f2)
-# Reserve 2G for OS
-RAM_MEMORY=$(expr $RAM_MEMORY - 2097152)
-case "${HEAP_SIZE: -1}" in
-  g|G)
-    HEAP_SIZE="${HEAP_SIZE%?}"
-    if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
-      HEAP_MEMORY=$(expr "$HEAP_SIZE" \* 1024 \* 1024)
-    else
-      HEAP_MEMORY=""
-    fi
-    ;;
-  m|M)
-    HEAP_SIZE="${HEAP_SIZE%?}"
-    if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
-      HEAP_MEMORY=$(expr "$HEAP_SIZE" \* 1024)
-    else
-      HEAP_MEMORY=""
-    fi
-    ;;
-  k|K)
-    HEAP_SIZE="${HEAP_SIZE%?}"
-    if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 ]; then
-      HEAP_MEMORY="$HEAP_SIZE"
-    else
-      HEAP_MEMORY=""
-    fi
-    ;;
-  \%)
-    HEAP_SIZE="${HEAP_SIZE%?}"
-    if [ -n "$HEAP_SIZE" -a "$HEAP_SIZE" -gt 0 -a "$HEAP_SIZE" -lt 100 ]; then
-      # Memory percentage given
-      HEAP_MEMORY=$(expr $RAM_MEMORY \* $HEAP_SIZE / 100)
-    else
-      HEAP_MEMORY=""
-    fi
-    ;;
-  *)
-    HEAP_MEMORY=""
-    ;;
-esac
-if [ -z "$HEAP_MEMORY" ]; then
-  # Memory size not specified (or invalid) - used 2/5 of RAM
-  HEAP_MEMORY=$(expr $RAM_MEMORY \* 2 / 5)
+# Memory sizes: HEAP_MEMORY, PAGE_MEMORY - computed from RAM_MEMORY - all *_MEMORY variables are in kiB
+TOTAL_RAM=$(cat /proc/meminfo | grep ^MemTotal | sed -e 's/: */ /g' | cut -d\  -f2)
+echo "TOTAL RAM: ${TOTAL_RAM}k"
+
+# Reserve 1.5GB for OS and as base for Lucene, or half of total ram,
+# which ever is smallest
+# 1.5G = 1572864
+# 2G = 2097152
+HALF_RAM=$(expr ${TOTAL_RAM} / 2)
+if [ ${HALF_RAM} -lt 1572864 ]; then
+  OS_RESERVED=${HALF_RAM}
+else
+  OS_RESERVED="1572864"
 fi
-# Must leave some memory for Lucene. And memory has a tendency to consume more actual RAM.
-# TODO This calculation should be more precise
-PAGE_MEMORY=$(expr $RAM_MEMORY - 3 / 2 \* $HEAP_MEMORY)
-echo HEAP_MEMORY=${HEAP_MEMORY}k
-echo PAGE_MEMORY=${PAGE_MEMORY}k
+echo "OS RESERVED: ${OS_RESERVED}k"
+
+# That leaves the rest for Neo4j purposes
+AVAIL_RAM=$(expr ${TOTAL_RAM} - ${OS_RESERVED})
+echo "AVAILABLE RAM: ${AVAIL_RAM}k"
+
+# Allocate minimum of 1/5 and 30GB as Heap. 30GB since the JVM does
+# special optimizations which don't apply above 32GB (exact number is
+# not fixed, so give it some margin)
+HEAP_MEMORY=$(expr ${AVAIL_RAM} / 5)
+if [ ${HEAP_MEMORY} -gt 31457280 ]; then
+  HEAP_MEMORY="31457280"
+fi
+echo "HEAP: ${HEAP_MEMORY}k"
+
+# Allocate 1/5 for Lucene's off-heap needs
+LUCENE=$(expr ${AVAIL_RAM} / 5)
+echo "LUCENE: ${LUCENE}k"
+
+# Allocate the rest to the page cache
+PAGE_MEMORY=$(expr ${AVAIL_RAM} - ${HEAP_MEMORY} - ${LUCENE})
+echo "PAGE CACHE: ${PAGE_MEMORY}k"
 
 # (Default value for) COORD_PORT
 if [ -z "$COORD_PORT" ]; then

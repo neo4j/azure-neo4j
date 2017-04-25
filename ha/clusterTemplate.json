@@ -90,9 +90,6 @@
         "Neo4jPassword": {
             "type": "securestring"
         },
-        "Neo4jHeapSize": {
-            "type": "string"
-        },
         "Neo4jHttpsPort": {
             "type": "int"
         },
@@ -747,9 +744,6 @@
                     },
                     "boltPort": {
                         "value": "[string(parameters('Neo4jBoltPort'))]"
-                    },
-                    "HeapSize": {
-                        "value": "[string(parameters('Neo4jHeapSize'))]"
                     },
                     "CoordPort": {
                         "value": "[string(parameters('Neo4jClusterPort'))]"
