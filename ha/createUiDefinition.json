@@ -195,7 +195,7 @@
                                 },
                                 "constraints": {
                                     "minAddressPrefixSize": "/27",
-                                    "minAddressCount": "[int(steps('neo4jConfig').VMCount.value)]",
+                                    "minAddressCount": 12,
                                     "requireContiguousAddresses": true
                                 }
                             }
