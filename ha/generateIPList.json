@@ -40,7 +40,8 @@
             "[int(variables('NetworkAddressParts')[2])]",
             "[int(variables('NetworkAddressParts')[3])]"
         ],
-        "intNetworkAddress": "[int(add(mul(variables('NetworkAddressPartsInt')[0],16777216),add(mul(variables('NetworkAddressPartsInt')[1],65536),add(mul(variables('NetworkAddressPartsInt')[2],256),variables('NetworkAddressPartsInt')[3]))))]",
+        "topOctet": "[variables('NetworkAddressParts')[0]]",
+        "intNetworkAddress": "[int(add(0,add(mul(variables('NetworkAddressPartsInt')[1],65536),add(mul(variables('NetworkAddressPartsInt')[2],256),variables('NetworkAddressPartsInt')[3]))))]",
         "firstAddress": "[add(parameters('firstOnSubnet'), variables('intNetworkAddress'))]",
         "stepNamePrefix": "IPList-concatStep-"
     },
@@ -90,7 +91,7 @@
                     },
                     "suffix": {
                         "value": [
-                           "[concat(string(div(add(variables('firstAddress'), copyIndex()),16777216)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),65536),256)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),256),256)),'.',string(mod(add(variables('firstAddress'), copyIndex()),256)))]"
+                           "[concat(variables('topOctet'),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),65536),256)),'.',string(mod(div(add(variables('firstAddress'), copyIndex()),256),256)),'.',string(mod(add(variables('firstAddress'), copyIndex()),256)))]"
                         ]
                     }
                 }
