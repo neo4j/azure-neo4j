@@ -209,6 +209,10 @@
                             "publicIpAddress": "Public IP address",
                             "domainNameLabel": "None"
                         },
+                        "toolTip": {
+                            "publicIpAddress": "Public IP address where Neo4j will be accessible. Select None if you don't want Neo4j to be publically accessible.",
+                            "domainNameLabel": ""
+                        },
                         "defaultValue": {
                             "publicIpAddressName": "NeoIP001"
                         },
@@ -218,7 +222,8 @@
                             }
                         },
                         "options": {
-                            "hideNone": true,
+                            "hideNone": false,
+                            "hideExisting": false,
                             "hideDomainNameLabel": true
                         },
                         "visible": true
