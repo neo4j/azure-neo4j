@@ -60,9 +60,9 @@
             "type": "string"
         },
 
-        "PublicIPNewOrExisting": {
+        "PublicIPNewOrExistingOrNone": {
             "type": "string",
-            "allowedValues": ["new","existing"]
+            "allowedValues": ["new","existing","none"]
         },
         "PublicIPName": {
             "type": "string"
@@ -403,7 +403,7 @@
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('artifactsBase'), 'publicip-', parameters('PublicIPNewOrExisting'), '.json')]",
+                    "uri": "[concat(variables('artifactsBase'), 'publicip-', parameters('PublicIPNewOrExistingOrNone'), '.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {

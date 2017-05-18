@@ -57,9 +57,9 @@
         "SubnetStartAddress": {
             "type": "string"
         },
-        "PublicIPNewOrExisting": {
+        "PublicIPNewOrExistingOrNone": {
             "type": "string",
-            "allowedValues": [ "new", "existing" ]
+            "allowedValues": [ "new", "existing", "none" ]
         },
         "PublicIPName": {
             "defaultValue": "NeoA001",
@@ -340,8 +340,8 @@
                     "SubnetStartAddress": {
                         "value": "[parameters('SubnetStartAddress')]"
                     },
-                    "PublicIPNewOrExisting": {
-                        "value": "[parameters('PublicIPNewOrExisting')]"
+                    "PublicIPNewOrExistingOrNone": {
+                        "value": "[parameters('PublicIPNewOrExistingOrNone')]"
                     },
                     "PublicIPName": {
                         "value": "[parameters('PublicIPName')]"

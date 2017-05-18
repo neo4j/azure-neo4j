@@ -245,7 +245,7 @@
             "SubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
             "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
             "SubnetStartAddress": "[steps('neo4jConfig').VNet.subnets.cluster.startAddress]",
-            "PublicIPNewOrExisting": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
+            "PublicIPNewOrExistingOrNone": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
             "PublicIPName": "[steps('neo4jConfig').PublicIP.name]",
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",
