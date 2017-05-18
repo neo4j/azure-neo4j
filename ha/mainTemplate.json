@@ -140,9 +140,9 @@
     },
     "variables": {
         "artifactsBase": "[concat(parameters('ArtifactsBase'),'/')]",
-        "SingleInstance-1": { "file": "clusterTemplate.json", "prefix": "Instance" },
-        "SingleInstance-0": { "file": "clusterTemplate.json", "prefix": "Cluster"  },
-        "template": "[variables( concat( 'SingleInstance-', string( sub(1,mod(1,parameters('VmCount'))) ) ) )]",
+        "SingleInstance-private": { "file": "privateClusterTemplate.json", "prefix": "Instance" },
+        "SingleInstance-public": { "file": "clusterTemplate.json", "prefix": "Cluster"  },
+        "template": "[variables( concat( 'SingleInstance-', replace(replace(replace(parameters('PublicIPNewOrExistingOrNone'),'new','public'), 'existing','public'), 'none','private') ) )]",
         "Neo4JTags": {
             "provider": "[toUpper(parameters('Neo4JTags').provider)]"
         },
