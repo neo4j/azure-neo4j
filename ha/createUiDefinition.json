@@ -209,6 +209,10 @@
                             "publicIpAddress": "Public IP address",
                             "domainNameLabel": "None"
                         },
+                        "toolTip": {
+                            "publicIpAddress": "Public IP address where Neo4j will be accessible. Select None if you don't want Neo4j to be publically accessible.",
+                            "domainNameLabel": ""
+                        },
                         "defaultValue": {
                             "publicIpAddressName": "NeoIP001"
                         },
@@ -218,7 +222,8 @@
                             }
                         },
                         "options": {
-                            "hideNone": true,
+                            "hideNone": false,
+                            "hideExisting": false,
                             "hideDomainNameLabel": true
                         },
                         "visible": true
@@ -240,7 +245,7 @@
             "SubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
             "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
             "SubnetStartAddress": "[steps('neo4jConfig').VNet.subnets.cluster.startAddress]",
-            "PublicIPNewOrExisting": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
+            "PublicIPNewOrExistingOrNone": "[toLower(steps('neo4jConfig').PublicIP.newOrExistingOrNone)]",
             "PublicIPName": "[steps('neo4jConfig').PublicIP.name]",
             "Neo4jVersion": "[steps('neo4jConfig').Neo4jVersion]",
             "Neo4jPassword": "[steps('neo4jConfig').Neo4jPassword]",

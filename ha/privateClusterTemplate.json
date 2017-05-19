@@ -152,17 +152,10 @@
             "nsg": "[concat(parameters('ClusterNamePrefix'),'-sg')]",
             "storage": "[concat(toLower(trim(parameters('ClusterNamePrefix'))), uniqueString(resourceGroup().id))]",
             "vm": "[concat(parameters('ClusterNamePrefix'),'-vm-')]",
-            "publicip": "[concat(parameters('ClusterNamePrefix'),'-pip')]",
-            "loadBalancer": "[concat(parameters('ClusterNamePrefix'),'-lb')]",
             "availabilitySet": "[concat(parameters('ClusterNamePrefix'), '-as')]"
         },
-        "LbResourceID": "[resourceId('Microsoft.Network/loadBalancers',variables('namePrefixes').loadBalancer)]",
         "resourceIDs": {
-            "loadbalancer": "[variables('LbResourceID')]",
-            "loadbalancerBEP": "[concat(variables('LbResourceID'), '/backendAddressPools/Neo4jInstancePool')]",
-            "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
-            "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
             "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
         },
         "natRulePrefix": "SSH-",
@@ -271,17 +264,7 @@
                             "privateIPAddress": "[reference('IPListConstructor').outputs.IPList.value[copyIndex()]]",
                             "subnet": {
                                 "id": "[concat(variables('resourceIDs').virtualNetwork, '/subnets/', parameters('SubnetName'))]"
-                            },
-                            "loadBalancerBackendAddressPools": [
-                                {
-                                    "id": "[variables('resourceIDs').loadbalancerBEP]"
-                                }
-                            ],
-                            "loadBalancerInboundNatRules": [
-                                {
-                                    "id": "[concat(variables('resourceIDs').loadbalancer,'/inboundNatRules/', variables('natRulePrefix'), copyindex())]"
-                                }
-                            ]
+                            }
                         }
                     }
                 ],
@@ -298,11 +281,9 @@
                 "count": "[parameters('VmCount')]"
             },
             "dependsOn": [
-                "PublicIP",
                 "VirtualNetwork",
                 "IPListConstructor",
-                "[variables('namePrefixes').nsg]",
-                "[variables('namePrefixes').loadBalancer]"
+                "[variables('namePrefixes').nsg]"
             ]
         },
         {
@@ -394,203 +375,6 @@
                 ]
             },
             "dependsOn": []
-        },
-        {
-            "type": "Microsoft.Resources/deployments",
-            "name": "PublicIP",
-            "apiVersion": "2016-09-01",
-            "dependsOn": [],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('artifactsBase'), 'publicip-', parameters('PublicIPNewOrExistingOrNone'), '.json')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "PublicIPNameForNew": {
-                        "value": "[variables('namePrefixes').publicip]"
-                    },
-                    "PublicIPNameExisting": {
-                        "value": "[parameters('PublicIPName')]"
-                    },
-                    "PublicIPAllocationMethod": {
-                        "value": "[parameters('PublicIPAllocationMethod')]"
-                    },
-                    "IdleTimeoutInMinutes": {
-                        "value": "[parameters('PublicIPIdleTimeoutInMinutes')]"
-                    },
-                    "Neo4Jtags": {
-                        "value": "[parameters('Neo4JTags')]"
-                    },
-                    "ArtifactsBase": {
-                        "value": "[parameters('ArtifactsBase')]"
-                    }
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Resources/deployments",
-            "name": "NATListConstructor",
-            "apiVersion": "2016-09-01",
-            "dependsOn": [],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('artifactsBase'), 'generateNatRules.json')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "ruleNamePrefix": {
-                        "value": "[variables('natRulePrefix')]"
-                    },
-                    "ruleCount": {
-                        "value": "[parameters('VmCount')]"
-                    },
-                    "frontendPortBase": {
-                        "value": 22000
-                    },
-                    "backendPort": {
-                        "value": 22
-                    },
-                    "protocol": {
-                        "value": "Tcp"
-                    },
-                    "enableFloatingIP": {
-                        "value": false
-                    },
-                    "frontendIPConfigurationID": {
-                        "value": "[variables('resourceIDs').loadbalancerFE]"
-                    },
-                    "ArtifactsBase": {
-                        "value": "[parameters('ArtifactsBase')]"
-                    }
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Network/loadBalancers",
-            "name": "[variables('namePrefixes').loadBalancer]",
-            "apiVersion": "2016-12-01",
-            "location": "[resourceGroup().location]",
-            "tags": "[parameters('Neo4JTags')]",
-            "dependsOn": [
-                "PublicIP",
-                "VirtualNetwork",
-                "NATListConstructor"
-            ],
-            "properties": {
-                "frontendIPConfigurations": [
-                    {
-                        "name": "LoadBalancerFrontEnd",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[reference('PublicIP').outputs.PublicIPResourceID.value]"
-                            }
-                        }
-                    }
-                ],
-                "backendAddressPools": [
-                    {
-                        "name": "Neo4jInstancePool"
-                    }
-                ],
-                "inboundNatRules": "[reference('NATListConstructor').outputs.ruleList.value]",
-                "loadBalancingRules": [
-                    {
-                        "name": "HttpRule",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[variables('resourceIDs').loadbalancerFE]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[variables('resourceIDs').loadbalancerBEP]"
-                            },
-                            "frontendPort": "[parameters('Neo4jHttpPort')]",
-                            "backendPort": "[parameters('Neo4jHttpPort')]",
-                            "enableFloatingIP": false,
-                            "idleTimeoutInMinutes": 5,
-                            "protocol": "Tcp",
-                            "loadDistribution": "SourceIP",
-                            "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
-                            }
-                        }
-                    },
-                    {
-                        "name": "HttpsRule",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[variables('resourceIDs').loadbalancerFE]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[variables('resourceIDs').loadbalancerBEP]"
-                            },
-                            "frontendPort": "[parameters('Neo4jHttpsPort')]",
-                            "backendPort": "[parameters('Neo4jHttpsPort')]",
-                            "enableFloatingIP": false,
-                            "idleTimeoutInMinutes": 5,
-                            "protocol": "Tcp",
-                            "loadDistribution": "SourceIP",
-                            "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/availabilityProbe')]"
-                            }
-                        }
-                    },
-                    {
-                        "name": "BoltRule",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[variables('resourceIDs').loadbalancerFE]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[variables('resourceIDs').loadbalancerBEP]"
-                            },
-                            "frontendPort": "[parameters('Neo4jBoltPort')]",
-                            "backendPort": "[parameters('Neo4jBoltPort')]",
-                            "enableFloatingIP": false,
-                            "idleTimeoutInMinutes": 5,
-                            "protocol": "Tcp",
-                            "loadDistribution": "SourceIP",
-                            "probe": {
-                                "id": "[concat(variables('resourceIDs').loadbalancer,'/probes/masterProbe')]"
-                            }
-                        }
-                    }
-                ],
-                "probes": [
-                    {
-                        "name": "availabilityProbe",
-                        "properties": {
-                            "protocol": "Http",
-                            "port": "[parameters('Neo4jHttpPort')]",
-                            "requestPath": "/db/manage/server/ha/available",
-                            "intervalInSeconds": 5,
-                            "numberOfProbes": 2
-                        }
-                    },
-                    {
-                        "name": "slaveProbe",
-                        "properties": {
-                            "protocol": "Http",
-                            "port": "[parameters('Neo4jHttpPort')]",
-                            "requestPath": "/db/manage/server/ha/slave",
-                            "intervalInSeconds": 5,
-                            "numberOfProbes": 2
-                        }
-                    },
-                    {
-                        "name": "masterProbe",
-                        "properties": {
-                            "protocol": "Http",
-                            "port": "[parameters('Neo4jHttpPort')]",
-                            "requestPath": "/db/manage/server/ha/master",
-                            "intervalInSeconds": 5,
-                            "numberOfProbes": 2
-                        }
-                    }
-                ]
-            }
         },
         {
             "type": "Microsoft.Resources/deployments",
