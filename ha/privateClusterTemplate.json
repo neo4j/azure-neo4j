@@ -159,7 +159,7 @@
         },
         "resourceIDs": {
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
-            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
+            "virtualNetwork": "[resourceId(parameters('VNetResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
         },
         "natRulePrefix": "SSH-",
         "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VNetNewOrExisting'), '.json')]",

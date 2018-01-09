@@ -166,7 +166,7 @@
             "loadbalancerFE": "[concat(variables('LbResourceID'), '/frontendIPConfigurations/LoadBalancerFrontEnd')]",
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
             "publicIP": "[resourceId('Microsoft.Network/publicIPAddresses', variables('namePrefixes').publicip)]",
-            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
+            "virtualNetwork": "[resourceId(parameters('VNetResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
         },
         "natRulePrefix": "SSH-",
         "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VNetNewOrExisting'), '.json')]",
