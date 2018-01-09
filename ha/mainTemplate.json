@@ -48,6 +48,9 @@
         "VNetAddressPrefix": {
             "type": "string"
         },
+        "VNetResourceGroupName": {
+            "type": "string"
+        },
         "SubnetName": {
             "type": "string"
         },
@@ -330,6 +333,9 @@
                     },
                     "VNetAddressPrefix": {
                         "value": "[parameters('VNetAddressPrefix')]"
+                    },
+                    "VNetResourceGroupName": {
+                        "value": "[parameters('VNetResourceGroupName')]"
                     },
                     "SubnetName": {
                         "value": "[parameters('SubnetName')]"

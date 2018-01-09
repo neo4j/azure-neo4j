@@ -50,6 +50,9 @@
         "VNetAddressPrefix": {
             "type": "string"
         },
+        "VNetResourceGroupName": {
+            "type": "string"
+        },
         "SubnetName": {
             "type": "string"
         },
@@ -619,7 +622,7 @@
                         "value": "[parameters('SubnetStartAddress')]"
                     },
                     "ResourceGroupName": {
-                        "value": "[parameters('ResourceGroupName')]"
+                        "value": "[parameters('VNetResourceGroupName')]"
                     },
                     "Neo4Jtags": {
                         "value": "[parameters('Neo4JTags')]"

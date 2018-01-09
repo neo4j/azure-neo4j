@@ -245,6 +245,7 @@
             "AdminCredential": "[coalesce(basics('adminCredentials').password,basics('adminCredentials').sshPublicKey)]",
             "VNetNewOrExisting": "[toLower(steps('neo4jConfig').VNet.newOrExisting)]",
             "VNetName": "[steps('neo4jConfig').VNet.name]",
+            "VNetResourceGroupName": "[steps('neo4jConfig').VNet.resourceGroup]",
             "VNetAddressPrefix": "[first(steps('neo4jConfig').VNet.addressPrefixes)]",
             "SubnetName": "[steps('neo4jConfig').VNet.subnets.cluster.name]",
             "SubnetAddressPrefix": "[steps('neo4jConfig').VNet.subnets.cluster.addressPrefix]",
