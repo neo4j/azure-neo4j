@@ -50,6 +50,9 @@
         "VNetAddressPrefix": {
             "type": "string"
         },
+        "VNetResourceGroupName": {
+            "type": "string"
+        },
         "SubnetName": {
             "type": "string"
         },
@@ -156,7 +159,7 @@
         },
         "resourceIDs": {
             "availabilitySet": "[resourceId('Microsoft.Compute/availabilitySets', variables('namePrefixes').availabilitySet)]",
-            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
+            "virtualNetwork": "[resourceId(parameters('VNetResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('VNetName'))]"
         },
         "natRulePrefix": "SSH-",
         "vnetReferencerUri": "[concat(variables('artifactsBase'), 'vnet-', parameters('VNetNewOrExisting'), '.json')]",
@@ -403,7 +406,7 @@
                         "value": "[parameters('SubnetStartAddress')]"
                     },
                     "ResourceGroupName": {
-                        "value": "[parameters('ResourceGroupName')]"
+                        "value": "[parameters('VNetResourceGroupName')]"
                     },
                     "Neo4Jtags": {
                         "value": "[parameters('Neo4JTags')]"

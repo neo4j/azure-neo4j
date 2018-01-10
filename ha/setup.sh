@@ -125,7 +125,13 @@ install_neo4j() {
   # Install
   apt update
   apt install -y zulu-8
-  # Install Neo4j, "RUNLEVEL=1" means "don't start Neo4j after installation"
+
+  # Accept Neo4j Enterprise License Agreement
+  # https://neo4j.com/docs/operations-manual/current/installation/linux/debian/#_non_interactive_installation_of_neo4j_enterprise_edition
+  echo "neo4j-enterprise neo4j/question select I ACCEPT" | sudo debconf-set-selections
+  echo "neo4j-enterprise neo4j/license note" | sudo debconf-set-selections
+
+  # Install Neo4j, "RUNLEVEL=1" means don't start Neo4j after installation"
   if [ -z "$NEO4J_VERSION" -o "default" = "$NEO4J_VERSION" ]; then
     RUNLEVEL=1 apt install -y neo4j-enterprise
   else
