@@ -51,20 +51,20 @@
                         "constraints": {
                             "allowedValues": [
                                 {
-                                    "label": "Most recent version",
+                                    "label": "Latest version",
                                     "value": "default"
                                 },
                                 {
-                                    "label": "Neo4j 3.2.9",
-                                    "value": "3.2.9"
+                                    "label": "Neo4j 3.3",
+                                    "value": "default"
                                 },
                                 {
-                                    "label": "Neo4j 3.1.7",
-                                    "value": "3.1.7"
+                                    "label": "Neo4j 3.2",
+                                    "value": "3.2"
                                 },
                                 {
-                                    "label": "Neo4j 3.0.12",
-                                    "value": "3.0.12"
+                                    "label": "Neo4j 3.1",
+                                    "value": "3.1"
                                 }
                             ]
                         }
