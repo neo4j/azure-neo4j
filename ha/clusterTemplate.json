@@ -382,7 +382,7 @@
                         }
                     },
                     {
-                        "name": "neo4j-transaction-communiocation",
+                        "name": "neo4j-transaction-communication",
                         "properties": {
                             "protocol": "Tcp",
                             "sourcePortRange": "*",
