@@ -188,7 +188,7 @@
                             "minAddressPrefixSize": "/27"
                         },
                         "options": {
-                            "hideExisting": false
+                            "hideExisting": true
                         },
                         "subnets": {
                             "cluster": {
