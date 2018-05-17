@@ -55,8 +55,12 @@
                                     "value": "default"
                                 },
                                 {
-                                    "label": "Neo4j 3.3",
+                                    "label": "Neo4j 3.4",
                                     "value": "default"
+                                },
+                                {
+                                    "label": "Neo4j 3.3",
+                                    "value": "3.3"
                                 },
                                 {
                                     "label": "Neo4j 3.2",
