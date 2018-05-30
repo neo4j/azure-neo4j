@@ -135,7 +135,7 @@ install_neo4j() {
   if [ -z "$NEO4J_VERSION" -o "default" = "$NEO4J_VERSION" ]; then
     RUNLEVEL=1 apt install -y neo4j-enterprise
   else
-    NEO4J_LATEST_VERSION=$(apt-cache madison neo4j-enterprise | awk -F "|" '{ print $2 }' | sed 's/\s//g' | awk '/^(1:)?'$NEO4J_VERSION'./ { print $1 }' | sed -e "s/^1://" | sort -V | tail -n 1)
+    NEO4J_LATEST_VERSION=$(apt-cache madison neo4j-enterprise | awk -F "|" '{ print $2 }' | sed 's/\s//g' | awk '/^(1:)?'$NEO4J_VERSION'./ { print $1 "\t" $1 }' | sed -e "s/^1://" | sort -V | tail -n 1 | awk '{ print $2 }')
     RUNLEVEL=1 apt install -y neo4j-enterprise=$NEO4J_LATEST_VERSION
   fi
 }
