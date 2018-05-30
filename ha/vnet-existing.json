@@ -26,6 +26,10 @@
                 "description": "the RG which owns the existing VNET"
             }
         },
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
         "Neo4Jtags": {
             "type": "object",
             "metadata": {

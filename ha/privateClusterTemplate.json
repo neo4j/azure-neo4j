@@ -408,6 +408,9 @@
                     "ResourceGroupName": {
                         "value": "[parameters('VNetResourceGroupName')]"
                     },
+                    "Location": {
+                        "value": "[parameters('Location')]"
+                    },
                     "Neo4Jtags": {
                         "value": "[parameters('Neo4JTags')]"
                     },
