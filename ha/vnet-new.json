@@ -47,7 +47,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[parameters('NetworkName')]",
             "apiVersion": "2016-12-01",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('Location')]",
             "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "addressSpace": {

@@ -39,7 +39,7 @@
         },
         "Location": {
             "type": "string",
-            "defaultValue": "[resourceGroup().location]",
+            "defaultValue": "[parameters('Location')]",
             "metadata": {
                 "description": "Azure location at which to create the new PublicIP instance"
             }
