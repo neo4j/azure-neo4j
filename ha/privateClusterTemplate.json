@@ -4,7 +4,7 @@
     "parameters": {
         "Location": {
             "type": "string",
-            "defaultValue": "[parameters('Location')]"
+            "defaultValue": "[resourceGroup().location]"
         },
         "ResourceGroupName": {
             "type": "string",

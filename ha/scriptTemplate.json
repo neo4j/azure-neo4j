@@ -7,7 +7,7 @@
         },
         "Location": {
             "type": "string",
-            "defaultValue": "[parameters('Location')]"
+            "defaultValue": "[resourceGroup().location]"
         },
         "script": {
             "type": "string"
