@@ -26,6 +26,10 @@
                 "description": "the RG to own the Vnet -- ignored for new VNET"
             }
         },
+        "Location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
         "Neo4Jtags": {
             "type": "object",
             "metadata": {
@@ -47,7 +51,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[parameters('NetworkName')]",
             "apiVersion": "2016-12-01",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('Location')]",
             "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "addressSpace": {

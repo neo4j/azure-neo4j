@@ -203,7 +203,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[parameters('saList')[copyIndex()]]",
             "apiVersion": "2016-12-01",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('Location')]",
             "tags": "[parameters('Neo4JTags')]",
             "properties": {},
             "sku": {
@@ -220,7 +220,7 @@
             "type": "Microsoft.Compute/availabilitySets",
             "name": "[variables('namePrefixes').availabilitySet]",
             "apiVersion": "2016-08-30",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('Location')]",
             "tags": "[parameters('Neo4JTags')]",
             "properties": {
                 "platformUpdateDomainCount": 20,
@@ -407,6 +407,9 @@
                     },
                     "ResourceGroupName": {
                         "value": "[parameters('VNetResourceGroupName')]"
+                    },
+                    "Location": {
+                        "value": "[parameters('Location')]"
                     },
                     "Neo4Jtags": {
                         "value": "[parameters('Neo4JTags')]"
